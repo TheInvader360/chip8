@@ -152,11 +152,122 @@ func (g *Game) Update(screen *ebiten.Image) error {
 }
 
 func emulateCycle() {
-	//TODO:
-	// Fetch Opcode
-	// Decode Opcode
-	// Execute Opcode
-	// Update timers
+	/*
+		Fetch opcode:
+		Fetch and merge two bytes from memory locations pointed at by pc & pc+1
+		e.g. memory[pc] = 0b10100010, memory[pc+1] = 0b11110000
+		Convert first byte to uint16 and shift the bits left 8 times.
+		e.g. 0b1010001000000000
+		Use bitwise OR operation to merge the bytes.
+		e.g. 0b1010001000000000 | 0b11110000 = 0b1010001011110000
+	*/
+	opcode = uint16(memory[pc])<<8 | uint16(memory[pc+1])
+
+	/*
+		Decode opcode:
+		Read the first 4 bits of the current opcode using bitwise AND operation
+		e.g. 0x2105 & 0xF000 = 0x2000
+		We can't always rely on just the first nibble to decode opcodes
+		e.g. 0x00E0 and 0x00EE both start with 0x0
+		In these cases we go on to compare the last nibble or byte...
+		e.g. 0x00EE & 0x00FF = 0x00EE
+		Then use bitwise OR to merge and arrive at the final decoded opcode
+		e.g. 0x0000 | 0x00EE = 0x00EE
+	*/
+	decoded := opcode & 0xF000
+	if decoded == 0x8000 {
+		lastNibble := opcode & 0x000F
+		decoded = decoded | lastNibble
+	}
+	if decoded == 0x0000 || decoded == 0xE000 || decoded == 0xF000 {
+		lastByte := opcode & 0x00FF
+		decoded = decoded | lastByte
+	}
+
+	//Execute opcode
+	switch opcode {
+	case 0x0000:
+		//TODO ?
+	case 0x00E0:
+		//disp_clear()
+		gfx = [2048]byte{}
+		pc += 2
+		render = true
+	case 0x00EE:
+		//TODO return;
+	case 0x1000:
+		//TODO goto NNN;
+	case 0x2000:
+		//TODO *(0xNNN)()
+	case 0x3000:
+		//TODO if(Vx==NN)
+	case 0x4000:
+		//TODO if(Vx!=NN)
+	case 0x5000:
+		//TODO if(Vx==Vy)
+	case 0x6000:
+		//TODO Vx=NN
+	case 0x7000:
+		//TODO Vx+=NN
+	case 0x8000:
+		//TODO Vx=Vy
+	case 0x8001:
+		//TODO Vx=Vx|Vy
+	case 0x8002:
+		//TODO Vx=Vx&Vy
+	case 0x8003:
+		//TODO Vx=Vx^Vy
+	case 0x8004:
+		//TODO Vx+=Vy
+	case 0x8005:
+		//TODO Vx-=Vy
+	case 0x8006:
+		//TODO Vx>>=1
+	case 0x8007:
+		//TODO Vx=Vy-Vx
+	case 0x800E:
+		//TODO Vx<<=1
+	case 0x9000:
+		//TODO if(Vx!=Vy)
+	case 0xA000:
+		//TODO I=NNN
+	case 0xB000:
+		//TODO PC=V0+NNN
+	case 0xC000:
+		//TODO Vx=rand()&NN
+	case 0xD000:
+		//TODO draw(Vx,Vy,N)
+	case 0xE09E:
+		//TODO if(key()==Vx)
+	case 0xE0A1:
+		//TODO if(key()!=Vx)
+	case 0xF007:
+		//TODO Vx=get_delay()
+	case 0xF00A:
+		//TODO Vx=get_key()
+	case 0xF015:
+		//TODO delay_timer(Vx)
+	case 0xF018:
+		//TODO sound_timer(Vx)
+	case 0xF01E:
+		//TODO I+=Vx
+	case 0xF029:
+		//TODO I=sprite_addr[Vx]
+	case 0xF033:
+		//TODO set_BCD(Vx);*(I+0)=BCD(3);*(I+1)=BCD(2);*(I+2)=BCD(1);
+	case 0xF055:
+		//TODO reg_dump(Vx,&I)
+	case 0xF065:
+		//TODO reg_load(Vx,&I)
+	}
+
+	//Update timers
+	if delayTimer > 0 {
+		delayTimer--
+	}
+	if soundTimer > 0 {
+		soundTimer--
+	}
 }
 
 func updateKeys() {
