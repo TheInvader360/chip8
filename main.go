@@ -324,7 +324,7 @@ func boolToByte(b bool) byte {
 }
 
 func exec0NNN() string {
-	//TODO ?
+	//not implemented
 	return fmt.Sprintf("exec0NNN 0x%04X", opcode)
 }
 
@@ -337,166 +337,169 @@ func exec00E0() string {
 }
 
 func exec00EE() string {
-	//TODO return;
+	//TODO return
 	return fmt.Sprintf("exec00EE 0x%04X", opcode)
 }
 
 func exec1NNN() string {
-	//TODO goto NNN;
-	return fmt.Sprintf("exec1NNN 0x%04X", opcode)
+	//goto nnn
+	pc = opcode & 0x0FFF
+	return fmt.Sprintf("exec1NNN 0x%04X: pc=0x%04X", opcode, pc)
 }
 
 func exec2NNN() string {
-	//TODO *(0xNNN)()
+	//TODO *(0xnnn)()
 	return fmt.Sprintf("exec2NNN 0x%04X", opcode)
 }
 
 func exec3XNN() string {
-	//TODO if(Vx==NN)
+	//TODO if(vx==nn)
 	return fmt.Sprintf("exec3XNN 0x%04X", opcode)
 }
 
 func exec4XNN() string {
-	//TODO if(Vx!=NN)
+	//TODO if(vx!=nn)
 	return fmt.Sprintf("exec4XNN 0x%04X", opcode)
 }
 
 func exec5XY0() string {
-	//TODO if(Vx==Vy)
+	//TODO if(vx==vy)
 	return fmt.Sprintf("exec5XY0 0x%04X", opcode)
 }
 
 func exec6XNN() string {
-	//TODO Vx=NN
+	//vx=nn
+	v[opcode&0x0F00>>8] = byte(opcode & 0x00FF)
+	pc += 2
 	return fmt.Sprintf("exec6XNN 0x%04X", opcode)
 }
 
 func exec7XNN() string {
-	//TODO Vx+=NN
+	//TODO vx+=nn
 	return fmt.Sprintf("exec7XNN 0x%04X", opcode)
 }
 
 func exec8XY0() string {
-	//TODO Vx=Vy
+	//TODO vx=vy
 	return fmt.Sprintf("exec8XY0 0x%04X", opcode)
 }
 
 func exec8XY1() string {
-	//TODO Vx=Vx|Vy
+	//TODO vx=vx|vy
 	return fmt.Sprintf("exec8XY1 0x%04X", opcode)
 }
 
 func exec8XY2() string {
-	//TODO Vx=Vx&Vy
+	//TODO vx=vx&vy
 	return fmt.Sprintf("exec8XY2 0x%04X", opcode)
 }
 
 func exec8XY3() string {
-	//TODO Vx=Vx^Vy
+	//TODO vx=vx^vy
 	return fmt.Sprintf("exec8XY3 0x%04X", opcode)
 }
 
 func exec8XY4() string {
-	//TODO Vx+=Vy
+	//TODO vx+=vy
 	return fmt.Sprintf("exec8XY4 0x%04X", opcode)
 }
 
 func exec8XY5() string {
-	//TODO Vx-=Vy
+	//TODO vx-=vy
 	return fmt.Sprintf("exec8XY5 0x%04X", opcode)
 }
 
 func exec8XY6() string {
-	//TODO Vx>>=1
+	//TODO vx>>=1
 	return fmt.Sprintf("exec8XY6 0x%04X", opcode)
 }
 
 func exec8XY7() string {
-	//TODO Vx=Vy-Vx
+	//TODO vx=vy-vx
 	return fmt.Sprintf("exec8XY7 0x%04X", opcode)
 }
 
 func exec8XYE() string {
-	//TODO Vx<<=1
+	//TODO vx<<=1
 	return fmt.Sprintf("exec8XYE 0x%04X", opcode)
 }
 
 func exec9XY0() string {
-	//TODO if(Vx!=Vy)
+	//TODO if(vx!=vy)
 	return fmt.Sprintf("exec9XY0 0x%04X", opcode)
 }
 
 func execANNN() string {
-	//TODO I=NNN
+	//i=nnn
 	return fmt.Sprintf("execANNN 0x%04X", opcode)
 }
 
 func execBNNN() string {
-	//TODO PC=V0+NNN
+	//TODO pc=v0+nnn
 	return fmt.Sprintf("execBNNN 0x%04X", opcode)
 }
 
 func execCXNN() string {
-	//TODO Vx=rand()&NN
+	//TODO vx=rand()&nn
 	return fmt.Sprintf("execCXNN 0x%04X", opcode)
 }
 
 func execDXYN() string {
-	//TODO draw(Vx,Vy,N)
+	//TODO draw(vx,vy,n)
 	return fmt.Sprintf("execDXYN 0x%04X", opcode)
 }
 
 func execEX9E() string {
-	//TODO if(key()==Vx)
+	//TODO if(key()==vx)
 	return fmt.Sprintf("execEX9E 0x%04X", opcode)
 }
 
 func execEXA1() string {
-	//TODO if(key()!=Vx)
+	//TODO if(key()!=vx)
 	return fmt.Sprintf("execEXA1 0x%04X", opcode)
 }
 
 func execFX07() string {
-	//TODO Vx=get_delay()
+	//TODO vx=get_delay()
 	return fmt.Sprintf("execFX07 0x%04X", opcode)
 }
 
 func execFX0A() string {
-	//TODO Vx=get_key()
+	//TODO vx=get_key()
 	return fmt.Sprintf("execFX0A 0x%04X", opcode)
 }
 
 func execFX15() string {
-	//TODO delay_timer(Vx)
+	//TODO delay_timer(vx)
 	return fmt.Sprintf("execFX15 0x%04X", opcode)
 }
 
 func execFX18() string {
-	//TODO sound_timer(Vx)
+	//TODO sound_timer(vx)
 	return fmt.Sprintf("execFX18 0x%04X", opcode)
 }
 
 func execFX1E() string {
-	//TODO I+=Vx
+	//TODO i+=vx
 	return fmt.Sprintf("execFX1E 0x%04X", opcode)
 }
 
 func execFX29() string {
-	//TODO I=sprite_addr[Vx]
+	//TODO i=sprite_addr[vx]
 	return fmt.Sprintf("execFX29 0x%04X", opcode)
 }
 
 func execFX33() string {
-	//TODO set_BCD(Vx);*(I+0)=BCD(3);*(I+1)=BCD(2);*(I+2)=BCD(1);
+	//TODO set_bcd(vx);*(i+0)=bcd(3);*(i+1)=bcd(2);*(i+2)=bcd(1);
 	return fmt.Sprintf("execFX33 0x%04X", opcode)
 }
 
 func execFX55() string {
-	//TODO reg_dump(Vx,&I)
+	//TODO reg_dump(vx,&i)
 	return fmt.Sprintf("execFX55 0x%04X", opcode)
 }
 
 func execFX65() string {
-	//TODO reg_load(Vx,&I)
+	//TODO reg_load(vx,&i)
 	return fmt.Sprintf("execFX65 0x%04X", opcode)
 }

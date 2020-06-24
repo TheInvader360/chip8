@@ -4,46 +4,46 @@ import "testing"
 
 func TestFetchOpcode(t *testing.T) {
 	memory = [4096]byte{}
-	memory[0x000] = 0xA2
-	memory[0x001] = 0xF0
-	memory[0x002] = 0xC5
-	memory[0x003] = 0x02
-	memory[0x004] = 0x0F
-	memory[0x005] = 0xF0
-	memory[0x006] = 0xAB
-	memory[0x007] = 0x50
-	memory[0x008] = 0x20
-	memory[0x009] = 0xFF
+	memory[0x0000] = 0xA2
+	memory[0x0001] = 0xF0
+	memory[0x0002] = 0xC5
+	memory[0x0003] = 0x02
+	memory[0x0004] = 0x0F
+	memory[0x0005] = 0xF0
+	memory[0x0006] = 0xAB
+	memory[0x0007] = 0x50
+	memory[0x0008] = 0x20
+	memory[0x0009] = 0xFF
 
-	pc = 0x000
+	pc = 0x0000
 	opcode := fetchOpcode()
 	expected := uint16(0xA2F0)
 	if opcode != expected {
 		t.Errorf("Expected %X, found %X.", expected, opcode)
 	}
 
-	pc = 0x002
+	pc = 0x0002
 	opcode = fetchOpcode()
 	expected = uint16(0xC502)
 	if opcode != expected {
 		t.Errorf("Expected %X, found %X.", expected, opcode)
 	}
 
-	pc = 0x004
+	pc = 0x0004
 	opcode = fetchOpcode()
 	expected = uint16(0x0FF0)
 	if opcode != expected {
 		t.Errorf("Expected %X, found %X.", expected, opcode)
 	}
 
-	pc = 0x006
+	pc = 0x0006
 	opcode = fetchOpcode()
 	expected = uint16(0xAB50)
 	if opcode != expected {
 		t.Errorf("Expected %X, found %X.", expected, opcode)
 	}
 
-	pc = 0x008
+	pc = 0x0008
 	opcode = fetchOpcode()
 	expected = uint16(0x20FF)
 	if opcode != expected {
@@ -314,6 +314,14 @@ func TestUpdateTimers(t *testing.T) {
 	if soundTimer != 0 {
 		t.Errorf("Expected %X, found %X.", 0, soundTimer)
 	}
+
+	updateTimers()
+	if delayTimer != 0 {
+		t.Errorf("Expected %X, found %X.", 0, delayTimer)
+	}
+	if soundTimer != 0 {
+		t.Errorf("Expected %X, found %X.", 0, soundTimer)
+	}
 }
 
 func TestBoolToByte(t *testing.T) {
@@ -331,351 +339,206 @@ func TestBoolToByte(t *testing.T) {
 }
 
 func TestExec0NNN(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//not implemented
 	opcode = 0x0B99
-	expected := "exec0NNN 0x0B99"
-	found := exec0NNN()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec00E0(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO disp_clear()
 	opcode = 0x00E0
-	expected := "exec00E0 0x00E0"
-	found := exec00E0()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec00EE(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO return
 	opcode = 0x00EE
-	expected := "exec00EE 0x00EE"
-	found := exec00EE()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec1NNN(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//goto nnn
 	opcode = 0x1A9F
-	expected := "exec1NNN 0x1A9F"
-	found := exec1NNN()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
+	exec1NNN()
+	epc := uint16(0x0A9F)
+	fpc := pc
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
 	}
 }
 
 func TestExec2NNN(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO *(0xnnn)()
 	opcode = 0x2F08
-	expected := "exec2NNN 0x2F08"
-	found := exec2NNN()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec3XNN(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO if(vx==nn)
 	opcode = 0x3A1D
-	expected := "exec3XNN 0x3A1D"
-	found := exec3XNN()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec4XNN(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO if(vx!=nn)
 	opcode = 0x4247
-	expected := "exec4XNN 0x4247"
-	found := exec4XNN()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec5XY0(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO if(vx==vy)
 	opcode = 0x5190
-	expected := "exec5XY0 0x5190"
-	found := exec5XY0()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec6XNN(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//vx=nn
 	opcode = 0x6EFD
-	expected := "exec6XNN 0x6EFD"
-	found := exec6XNN()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
+	pc = 0x0000
+	exec6XNN()
+	evx := byte(0xFD)
+	fvx := v[0xE]
+	epc := uint16(0x0002)
+	fpc := pc
+	if fvx != evx {
+		t.Errorf("Expected 0x%02X, found 0x%02X.", evx, fvx)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
 	}
 }
 
 func TestExec7XNN(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO vx+=nn
 	opcode = 0x7015
-	expected := "exec7XNN 0x7015"
-	found := exec7XNN()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec8XY0(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO vx=vy
 	opcode = 0x89B0
-	expected := "exec8XY0 0x89B0"
-	found := exec8XY0()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec8XY1(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO vx=vx|vy
 	opcode = 0x8DE1
-	expected := "exec8XY1 0x8DE1"
-	found := exec8XY1()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec8XY2(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO vx=vx&vy
 	opcode = 0x83F2
-	expected := "exec8XY2 0x83F2"
-	found := exec8XY2()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec8XY3(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO vx=vx^vy
 	opcode = 0x8AC3
-	expected := "exec8XY3 0x8AC3"
-	found := exec8XY3()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec8XY4(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO vx+=vy
 	opcode = 0x8474
-	expected := "exec8XY4 0x8474"
-	found := exec8XY4()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec8XY5(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO vx-=vy
 	opcode = 0x89A5
-	expected := "exec8XY5 0x89A5"
-	found := exec8XY5()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec8XY6(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO vx>>=1
 	opcode = 0x8206
-	expected := "exec8XY6 0x8206"
-	found := exec8XY6()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec8XY7(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO vx=vy-vx
 	opcode = 0x8197
-	expected := "exec8XY7 0x8197"
-	found := exec8XY7()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec8XYE(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO vx<<=1
 	opcode = 0x8EEE
-	expected := "exec8XYE 0x8EEE"
-	found := exec8XYE()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExec9XY0(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO if(vx!=vy)
 	opcode = 0x9730
-	expected := "exec9XY0 0x9730"
-	found := exec9XY0()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExecANNN(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//i=nnn
 	opcode = 0xA259
-	expected := "execANNN 0xA259"
-	found := execANNN()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
+	pc = 0x000
+	execANNN()
+	ei := uint16(0x0259)
+	fi := i
+	epc := uint16(0x0002)
+	fpc := pc
+	if fi != ei {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", ei, fi)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
 	}
 }
 
 func TestExecBNNN(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO pc=v0+nnn
 	opcode = 0xBAF2
-	expected := "execBNNN 0xBAF2"
-	found := execBNNN()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExecCXNN(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO vx=rand()&nn
 	opcode = 0xC4CE
-	expected := "execCXNN 0xC4CE"
-	found := execCXNN()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExecDXYN(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO draw(vx,vy,n)
 	opcode = 0xD81C
-	expected := "execDXYN 0xD81C"
-	found := execDXYN()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExecEX9E(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO if(key()==vx)
 	opcode = 0xE39E
-	expected := "execEX9E 0xE39E"
-	found := execEX9E()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExecEXA1(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO if(key()!=vx)
 	opcode = 0xE2A1
-	expected := "execEXA1 0xE2A1"
-	found := execEXA1()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExecFX07(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO vx=get_delay()
 	opcode = 0xF807
-	expected := "execFX07 0xF807"
-	found := execFX07()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExecFX0A(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO vx=get_key()
 	opcode = 0xFC0A
-	expected := "execFX0A 0xFC0A"
-	found := execFX0A()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExecFX15(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO delay_timer(vx)
 	opcode = 0xF815
-	expected := "execFX15 0xF815"
-	found := execFX15()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExecFX18(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO sound_timer(vx)
 	opcode = 0xF118
-	expected := "execFX18 0xF118"
-	found := execFX18()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExecFX1E(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO i+=vx
 	opcode = 0xFF1E
-	expected := "execFX1E 0xFF1E"
-	found := execFX1E()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExecFX29(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO i=sprite_addr[vx]
 	opcode = 0xF329
-	expected := "execFX29 0xF329"
-	found := execFX29()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExecFX33(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO set_bcd(vx);*(i+0)=bcd(3);*(i+1)=bcd(2);*(i+2)=bcd(1);
 	opcode = 0xF533
-	expected := "execFX33 0xF533"
-	found := execFX33()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExecFX55(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO reg_dump(vx,&i)
 	opcode = 0xFC55
-	expected := "execFX55 0xFC55"
-	found := execFX55()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
 
 func TestExecFX65(t *testing.T) {
-	//TODO rewrite test for real implementation!
+	//TODO reg_load(vx,&i)
 	opcode = 0xFF65
-	expected := "execFX65 0xFF65"
-	found := execFX65()
-	if found != expected {
-		t.Errorf("Expected %s, found %s.", expected, found)
-	}
 }
