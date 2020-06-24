@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"image/color"
 	"io/ioutil"
@@ -115,12 +116,13 @@ func init() {
 	sp = 0
 	keys = [16]byte{}
 	render = true
+}
 
-	if len(os.Args) < 2 {
-		log.Fatal("No ROM specified. Try: go run main.go rom/test/test_opcode.ch8")
-	}
+func loadRom() {
+	path := flag.String("path", "./rom/test/test_opcode.ch8", "path to rom file")
+	flag.Parse()
 
-	rom, err := os.Open(os.Args[1])
+	rom, err := os.Open(*path)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -133,6 +135,8 @@ func init() {
 	for i := 0; i < len(bytes); i++ {
 		memory[i+0x200] = bytes[i]
 	}
+
+	fmt.Println(memory)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -140,6 +144,10 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func (g *Game) Update(screen *ebiten.Image) error {
+	if memory[0x200] == 0 {
+		loadRom()
+	}
+
 	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
 		os.Exit(0)
 	}
@@ -308,7 +316,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.CurrentTPS()))
-	fmt.Println(keys)
+	//fmt.Println(keys)
 }
 
 func main() {
