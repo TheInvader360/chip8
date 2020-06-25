@@ -1,19 +1,21 @@
 package main
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestFetchOpcode(t *testing.T) {
-	memory = [4096]byte{}
-	memory[0x0000] = 0xA2
-	memory[0x0001] = 0xF0
-	memory[0x0002] = 0xC5
-	memory[0x0003] = 0x02
-	memory[0x0004] = 0x0F
-	memory[0x0005] = 0xF0
-	memory[0x0006] = 0xAB
-	memory[0x0007] = 0x50
-	memory[0x0008] = 0x20
-	memory[0x0009] = 0xFF
+	mem = [memS]byte{}
+	mem[0x0000] = 0xA2
+	mem[0x0001] = 0xF0
+	mem[0x0002] = 0xC5
+	mem[0x0003] = 0x02
+	mem[0x0004] = 0x0F
+	mem[0x0005] = 0xF0
+	mem[0x0006] = 0xAB
+	mem[0x0007] = 0x50
+	mem[0x0008] = 0x20
+	mem[0x0009] = 0xFF
 
 	pc = 0x0000
 	opcode := fetchOpcode()
@@ -340,12 +342,50 @@ func TestBoolToByte(t *testing.T) {
 
 func TestExec0NNN(t *testing.T) {
 	//not implemented
-	opcode = 0x0B99
+	opcode = 0x00E0
+	pc = 0x0000
+	ertn := "exec0NNN 0x00E0: pc=0x0000 (not implemented)"
+	frtn := exec0NNN()
+	epc := uint16(0x0000)
+	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
 }
 
 func TestExec00E0(t *testing.T) {
-	//TODO disp_clear()
+	//disp_clear()
 	opcode = 0x00E0
+	pc = 0x0000
+	gfx = [gfxS]byte{}
+	gfx[8] = 1
+	gfx[128] = 1
+	gfx[278] = 1
+	gfx[1080] = 1
+	gfx[2000] = 1
+	ertn := "exec00E0 0x00E0: pc=0x0002 gfx={cleared} render=true"
+	frtn := exec00E0()
+	egfx := [gfxS]byte{}
+	fgfx := gfx
+	epc := uint16(0x0002)
+	fpc := pc
+	erender := true
+	frender := render
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fgfx != egfx {
+		t.Errorf("Expected %v, found %v.", egfx, fgfx)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
+	if frender != erender {
+		t.Errorf("Expected %t, found %t.", erender, frender)
+	}
 }
 
 func TestExec00EE(t *testing.T) {
@@ -356,9 +396,13 @@ func TestExec00EE(t *testing.T) {
 func TestExec1NNN(t *testing.T) {
 	//goto nnn
 	opcode = 0x1A9F
-	exec1NNN()
+	ertn := "exec1NNN 0x1A9F: pc=0x0A9F (goto)"
+	frtn := exec1NNN()
 	epc := uint16(0x0A9F)
 	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
 	if fpc != epc {
 		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
 	}
@@ -388,11 +432,15 @@ func TestExec6XNN(t *testing.T) {
 	//vx=nn
 	opcode = 0x6EFD
 	pc = 0x0000
-	exec6XNN()
+	ertn := "exec6XNN 0x6EFD: pc=0x0002 v[E]=FD"
+	frtn := exec6XNN()
 	evx := byte(0xFD)
 	fvx := v[0xE]
 	epc := uint16(0x0002)
 	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
 	if fvx != evx {
 		t.Errorf("Expected 0x%02X, found 0x%02X.", evx, fvx)
 	}
@@ -402,8 +450,25 @@ func TestExec6XNN(t *testing.T) {
 }
 
 func TestExec7XNN(t *testing.T) {
-	//TODO vx+=nn
-	opcode = 0x7015
+	//vx+=nn
+	opcode = 0x7315
+	pc = 0x0000
+	v[0x3] = 0xA1
+	ertn := "exec7XNN 0x7315: pc=0x0002 v[3]=B6"
+	frtn := exec7XNN()
+	evx := byte(0xB6)
+	fvx := v[0x3]
+	epc := uint16(0x0002)
+	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fvx != evx {
+		t.Errorf("Expected 0x%02X, found 0x%02X.", evx, fvx)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
 }
 
 func TestExec8XY0(t *testing.T) {
@@ -459,12 +524,16 @@ func TestExec9XY0(t *testing.T) {
 func TestExecANNN(t *testing.T) {
 	//i=nnn
 	opcode = 0xA259
-	pc = 0x000
-	execANNN()
+	pc = 0x0000
+	ertn := "execANNN 0xA259: pc=0x0002 i=0x0259"
+	frtn := execANNN()
 	ei := uint16(0x0259)
 	fi := i
 	epc := uint16(0x0002)
 	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
 	if fi != ei {
 		t.Errorf("Expected 0x%04X, found 0x%04X.", ei, fi)
 	}
@@ -484,8 +553,91 @@ func TestExecCXNN(t *testing.T) {
 }
 
 func TestExecDXYN(t *testing.T) {
-	//TODO draw(vx,vy,n)
-	opcode = 0xD81C
+	//draw(x,y,n)
+
+	//draw a 3x3 sprite at 5,2 (sprite: diagonal line topleft to bottomright)
+	opcode = 0xD793
+	pc = 0x0000
+	gfx = [gfxS]byte{}
+	mem = [memS]byte{}
+	mem[0x0101] = 0x80
+	mem[0x0102] = 0x40
+	mem[0x0103] = 0x20
+	i = 0x0101
+	v[7] = 5
+	v[9] = 2
+	ertn := "execDXYN 0xD793: pc=0x0002 gfx={updated} render=true"
+	frtn := execDXYN()
+	egfx := [gfxS]byte{}
+	egfx[133] = 1
+	egfx[198] = 1
+	egfx[263] = 1
+	fgfx := gfx
+	evf := byte(0)
+	fvf := v[0xF]
+	epc := uint16(0x0002)
+	fpc := pc
+	erender := true
+	frender := render
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fgfx != egfx {
+		t.Errorf("Expected %v, found %v.", egfx, fgfx)
+	}
+	if fvf != evf {
+		t.Errorf("Expected %v, found %v.", evf, fvf)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
+	if frender != erender {
+		t.Errorf("Expected %t, found %t.", erender, frender)
+	}
+
+	//draw the sprite again at 8,5 (no pixels erased)
+	v[7] = 8
+	v[9] = 5
+	execDXYN()
+	evf = byte(0)
+	fvf = v[0xF]
+	if fvf != evf {
+		t.Errorf("Expected %v, found %v.", evf, fvf)
+	}
+
+	//draw the sprite again at 10,7 (pixel erased)
+	v[7] = 10
+	v[9] = 7
+	execDXYN()
+	evf = byte(1)
+	fvf = v[0xF]
+	if fvf != evf {
+		t.Errorf("Expected %v, found %v.", evf, fvf)
+	}
+
+	//clear gfx then draw the sprite at 62,0 (exceed horizontal bounds)
+	gfx = [gfxS]byte{}
+	v[7] = 62
+	v[9] = 0
+	execDXYN()
+	egfx = [gfxS]byte{}
+	//egfx[62] = 1
+	//egfx[127] = 1
+	//egfx[128] = 1
+	//fgfx = gfx
+	//TODO: confirm expected behaviour then finish implementing test!
+
+	//clear gfx then draw the sprite at 0,31 (exceed vertical bounds)
+	gfx = [gfxS]byte{}
+	v[7] = 0
+	v[9] = 31
+	execDXYN()
+	egfx = [gfxS]byte{}
+	//egfx[?] = 1
+	//egfx[?] = 1
+	//egfx[?] = 1
+	//fgfx = gfx
+	//TODO: confirm expected behaviour then finish implementing test!
 }
 
 func TestExecEX9E(t *testing.T) {

@@ -21,6 +21,12 @@ const (
 	gfxH   = 32
 	pixelW = float64(screenW / gfxW)
 	pixelH = float64(screenH / gfxH)
+
+	gfxS = gfxW * gfxH //total pixels
+	memS = 4096        //number of memory addresses
+	vS   = 16          //number of registers
+	sS   = 16          //depth of stack
+	kS   = 16          //number of input keys
 )
 
 type Game struct{}
@@ -29,16 +35,16 @@ type opcodeExecutor func() string
 
 var (
 	opcode     uint16     //current opcode (each opcode is two bytes long)
-	memory     [4096]byte //system memory (4kb total. 0x200-0xFFF: rom and ram)
-	v          [16]byte   //registers (v0-vE: general purpose. vF: carry flag)
+	mem        [memS]byte //system memory (4kb total. 0x200-0xFFF: rom and ram)
+	v          [vS]byte   //registers (v0-vE: general purpose. vF: carry flag)
 	i          uint16     //index register
 	pc         uint16     //program counter
-	gfx        [2048]byte //vF is set upon pixel collision in draw instruction
+	gfx        [gfxS]byte //vF is set upon pixel collision in draw instruction
 	delayTimer byte       //counts down to zero at 60hz
 	soundTimer byte       //counts down to zero at 60hz
-	stack      [16]uint16 //store program counter in stack before jump/gosub
+	stack      [sS]uint16 //store program counter in stack before jump/gosub
 	sp         uint16     //stack pointer to remember the level of stack used
-	keys       [16]byte   //stores the current state of the hex keypad (0-F)
+	keys       [kS]byte   //stores the current state of the hex keypad (0-F)
 	render     bool       //set by 0x00E0 (cls) and 0xDXYN (draw sprite)
 	loaded     bool       //set when rom is loaded into memory
 
@@ -77,52 +83,19 @@ var (
 
 func init() {
 	opcode = 0
-	memory = [4096]byte{}
+	mem = [memS]byte{}
 	for i := 0; i < len(fontset); i++ {
-		memory[i] = fontset[i]
+		mem[i] = fontset[i]
 	}
-	v = [16]byte{}
+	v = [vS]byte{}
 	i = 0
 	pc = 0x200
-	gfx = [gfxW * gfxH]byte{
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	}
+	gfx = [gfxS]byte{}
 	delayTimer = 0
 	soundTimer = 0
-	stack = [16]uint16{}
+	stack = [sS]uint16{}
 	sp = 0
-	keys = [16]byte{}
+	keys = [kS]byte{}
 	render = true
 	loaded = false
 }
@@ -173,7 +146,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func loadRom() {
-	path := flag.String("path", "./rom/test/test_opcode.ch8", "path to rom file")
+	path := flag.String("path", "./rom/test/ti360.ch8", "path to rom file")
 	flag.Parse()
 
 	rom, err := os.Open(*path)
@@ -187,9 +160,9 @@ func loadRom() {
 	}
 
 	for i := 0; i < len(bytes); i++ {
-		memory[i+0x200] = bytes[i]
+		mem[i+0x200] = bytes[i]
 	}
-	//fmt.Println(memory)
+	fmt.Println(mem)
 	loaded = true
 }
 
@@ -229,7 +202,7 @@ func fetchOpcode() uint16 {
 		Use bitwise OR operation to merge the bytes.
 		e.g. 0b1010001000000000 | 0b11110000 = 0b1010001011110000
 	*/
-	return uint16(memory[pc])<<8 | uint16(memory[pc+1])
+	return uint16(mem[pc])<<8 | uint16(mem[pc+1])
 }
 
 func decodeOpcode() uint16 {
@@ -325,15 +298,15 @@ func boolToByte(b bool) byte {
 
 func exec0NNN() string {
 	//not implemented
-	return fmt.Sprintf("exec0NNN 0x%04X", opcode)
+	return fmt.Sprintf("exec0NNN 0x%04X: pc=0x%04X (not implemented)", opcode, pc)
 }
 
 func exec00E0() string {
 	//disp_clear()
-	gfx = [2048]byte{}
+	gfx = [gfxS]byte{}
 	pc += 2
 	render = true
-	return fmt.Sprintf("exec00E0 0x%04X", opcode)
+	return fmt.Sprintf("exec00E0 0x%04X: pc=0x%04X gfx={cleared} render=%t", opcode, pc, render)
 }
 
 func exec00EE() string {
@@ -344,7 +317,7 @@ func exec00EE() string {
 func exec1NNN() string {
 	//goto nnn
 	pc = opcode & 0x0FFF
-	return fmt.Sprintf("exec1NNN 0x%04X: pc=0x%04X", opcode, pc)
+	return fmt.Sprintf("exec1NNN 0x%04X: pc=0x%04X (goto)", opcode, pc)
 }
 
 func exec2NNN() string {
@@ -354,6 +327,7 @@ func exec2NNN() string {
 
 func exec3XNN() string {
 	//TODO if(vx==nn)
+	pc += 2
 	return fmt.Sprintf("exec3XNN 0x%04X", opcode)
 }
 
@@ -369,14 +343,20 @@ func exec5XY0() string {
 
 func exec6XNN() string {
 	//vx=nn
-	v[opcode&0x0F00>>8] = byte(opcode & 0x00FF)
+	x := opcode & 0x0F00 >> 8
+	nn := byte(opcode & 0x00FF)
+	v[x] = nn
 	pc += 2
-	return fmt.Sprintf("exec6XNN 0x%04X", opcode)
+	return fmt.Sprintf("exec6XNN 0x%04X: pc=0x%04X v[%01X]=%02X", opcode, pc, x, v[x])
 }
 
 func exec7XNN() string {
-	//TODO vx+=nn
-	return fmt.Sprintf("exec7XNN 0x%04X", opcode)
+	//vx+=nn
+	x := opcode & 0x0F00 >> 8
+	nn := byte(opcode & 0x00FF)
+	v[x] += nn
+	pc += 2
+	return fmt.Sprintf("exec7XNN 0x%04X: pc=0x%04X v[%01X]=%02X", opcode, pc, x, v[x])
 }
 
 func exec8XY0() string {
@@ -431,7 +411,9 @@ func exec9XY0() string {
 
 func execANNN() string {
 	//i=nnn
-	return fmt.Sprintf("execANNN 0x%04X", opcode)
+	i = opcode & 0x0FFF
+	pc += 2
+	return fmt.Sprintf("execANNN 0x%04X: pc=0x%04X i=0x%04X", opcode, pc, i)
 }
 
 func execBNNN() string {
@@ -441,12 +423,49 @@ func execBNNN() string {
 
 func execCXNN() string {
 	//TODO vx=rand()&nn
+	pc += 2
 	return fmt.Sprintf("execCXNN 0x%04X", opcode)
 }
 
 func execDXYN() string {
-	//TODO draw(vx,vy,n)
-	return fmt.Sprintf("execDXYN 0x%04X", opcode)
+	//draw(vx,vy,n)
+	/*
+		Read n bytes (data) from memory, starting at i.
+		Display bytes (data) as sprites on screen at coordinates vx,vy.
+		Sprites are XORed onto the existing screen.
+		If any pixels are erased, v[F] is set to 1, otherwise it is set to 0.
+		Sprites wrap to opposite side of screen if they overlap an edge.
+	*/
+	vx := uint16(v[opcode&0x0F00>>8])
+	vy := uint16(v[opcode&0x00F0>>4])
+	n := opcode & 0x000F
+	v[0xF] = 0
+	//iterate over all of the sprite's rows
+	for row := uint16(0); row < n; row++ {
+		//get the byte for the current row
+		data := mem[i+row]
+		//iterate over all of the current row's cols
+		for col := uint16(0); col < 8; col++ {
+			//calculate the gfx index for the current row and col
+			idx := ((vy+row)*gfxW + vx + col)
+			//apply bitwise AND mask to extract a single pixel from data
+			if data&(0b10000000>>col) != 0 {
+				//TODO: confirm that out of bounds draw really should wrap!
+				if idx > uint16(len(gfx)) {
+					idx -= gfxS
+				}
+				//set v[F] if pixel is to be erased
+				if gfx[idx] == 1 {
+					v[0xF] = 1
+				}
+				//bitwise XOR operation to toggle pixel value
+				gfx[idx] ^= 1
+			}
+		}
+	}
+	pc += 2
+	render = true
+	return fmt.Sprintf("execDXYN 0x%04X: pc=0x%04X gfx={updated} render=%t", opcode, pc, render)
 }
 
 func execEX9E() string {
@@ -456,11 +475,13 @@ func execEX9E() string {
 
 func execEXA1() string {
 	//TODO if(key()!=vx)
+	pc += 2
 	return fmt.Sprintf("execEXA1 0x%04X", opcode)
 }
 
 func execFX07() string {
 	//TODO vx=get_delay()
+	pc += 2
 	return fmt.Sprintf("execFX07 0x%04X", opcode)
 }
 

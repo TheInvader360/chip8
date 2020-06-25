@@ -4,4 +4,4 @@
 
 ### Running
 
-    go test && go run main.go -path=./rom/test/test_opcode.ch8
+    go test && go run main.go -path=./rom/test/ti360.ch8
