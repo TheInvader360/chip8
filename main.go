@@ -15,9 +15,10 @@ import (
 )
 
 const (
-	fullscreen = false
-	screenW    = 960
-	screenH    = 480
+	fullscreen     = false
+	screenW        = 960
+	screenH        = 480
+	ticksPerSecond = 60
 
 	gfxW   = 64
 	gfxH   = 32
@@ -84,6 +85,7 @@ var (
 )
 
 func init() {
+	ebiten.SetMaxTPS(ticksPerSecond)
 	rand.Seed(time.Now().UnixNano())
 	opcode = 0
 	mem = [memS]byte{}
@@ -324,8 +326,12 @@ func exec1NNN() string {
 }
 
 func exec2NNN() string {
-	//TODO *(0xnnn)()
-	return fmt.Sprintf("exec2NNN 0x%04X", opcode)
+	//call subroutine (increment sp, put current pc on stack, set pc to nnn)
+	nnn := opcode & 0x0FFF
+	sp++
+	stack[sp] = pc
+	pc = nnn
+	return fmt.Sprintf("exec2NNN 0x%04X: pc=0x%04X sp=0x%04X", opcode, pc, sp)
 }
 
 func exec3XNN() string {
@@ -342,13 +348,29 @@ func exec3XNN() string {
 }
 
 func exec4XNN() string {
-	//TODO if(vx!=nn)
-	return fmt.Sprintf("exec4XNN 0x%04X", opcode)
+	//if(vx!=nn) skip next instruction
+	x := opcode & 0x0F00 >> 8
+	nn := byte(opcode & 0x00FF)
+	skip := false
+	if v[x] != nn {
+		skip = true
+		pc += 2
+	}
+	pc += 2
+	return fmt.Sprintf("exec4XNN 0x%04X: pc=0x%04X {skip=%t}", opcode, pc, skip)
 }
 
 func exec5XY0() string {
-	//TODO if(vx==vy)
-	return fmt.Sprintf("exec5XY0 0x%04X", opcode)
+	//if(vx==vy) skip next instruction
+	x := opcode & 0x0F00 >> 8
+	y := opcode & 0x00F0 >> 4
+	skip := false
+	if v[x] == v[y] {
+		skip = true
+		pc += 2
+	}
+	pc += 2
+	return fmt.Sprintf("exec5XY0 0x%04X: pc=0x%04X {skip=%t}", opcode, pc, skip)
 }
 
 func exec6XNN() string {
@@ -415,8 +437,16 @@ func exec8XYE() string {
 }
 
 func exec9XY0() string {
-	//TODO if(vx!=vy)
-	return fmt.Sprintf("exec9XY0 0x%04X", opcode)
+	//if(vx!=vy) skip next instruction
+	x := opcode & 0x0F00 >> 8
+	y := opcode & 0x00F0 >> 4
+	skip := false
+	if v[x] != v[y] {
+		skip = true
+		pc += 2
+	}
+	pc += 2
+	return fmt.Sprintf("exec9XY0 0x%04X: pc=0x%04X {skip=%t}", opcode, pc, skip)
 }
 
 func execANNN() string {

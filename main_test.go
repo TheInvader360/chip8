@@ -211,9 +211,29 @@ func TestExec1NNN(t *testing.T) {
 }
 
 func TestExec2NNN(t *testing.T) {
-	//TODO *(0xnnn)()
+	//call subroutine (increment sp, put current pc on stack, set pc to nnn)
 	reset()
 	opcode = 0x2F08
+	ertn := "exec2NNN 0x2F08: pc=0x0F08 sp=0x0001"
+	frtn := exec2NNN()
+	esp := uint16(0x0001)
+	fsp := sp
+	essp := uint16(0x0200)
+	fssp := stack[sp]
+	epc := uint16(0x0F08)
+	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fsp != esp {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", esp, fsp)
+	}
+	if fssp != essp {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", essp, fssp)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
 }
 
 func TestExec3XNN(t *testing.T) {
@@ -245,15 +265,60 @@ func TestExec3XNN(t *testing.T) {
 }
 
 func TestExec4XNN(t *testing.T) {
-	//TODO if(vx!=nn)
+	//if(vx!=nn) skip next instruction
 	reset()
 	opcode = 0x4247
+	v[0x2] = 0xAC
+	ertn := "exec4XNN 0x4247: pc=0x0204 {skip=true}"
+	frtn := exec4XNN()
+	epc := uint16(0x0204)
+	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
+	v[0x2] = 0x47
+	ertn = "exec4XNN 0x4247: pc=0x0206 {skip=false}"
+	frtn = exec4XNN()
+	epc = uint16(0x0206)
+	fpc = pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
 }
 
 func TestExec5XY0(t *testing.T) {
-	//TODO if(vx==vy)
+	//if(vx==vy) skip next instruction
 	reset()
 	opcode = 0x5190
+	v[0x1] = 0xAC
+	v[0x9] = 0xAC
+	ertn := "exec5XY0 0x5190: pc=0x0204 {skip=true}"
+	frtn := exec5XY0()
+	epc := uint16(0x0204)
+	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
+	v[0x1] = 0x47
+	ertn = "exec5XY0 0x5190: pc=0x0206 {skip=false}"
+	frtn = exec5XY0()
+	epc = uint16(0x0206)
+	fpc = pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
 }
 
 func TestExec6XNN(t *testing.T) {
@@ -354,9 +419,32 @@ func TestExec8XYE(t *testing.T) {
 }
 
 func TestExec9XY0(t *testing.T) {
-	//TODO if(vx!=vy)
+	//if(vx!=vy) skip next instruction
 	reset()
 	opcode = 0x9730
+	v[0x7] = 0xAC
+	v[0x3] = 0x47
+	ertn := "exec9XY0 0x9730: pc=0x0204 {skip=true}"
+	frtn := exec9XY0()
+	epc := uint16(0x0204)
+	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
+	v[0x3] = 0xAC
+	ertn = "exec9XY0 0x9730: pc=0x0206 {skip=false}"
+	frtn = exec9XY0()
+	epc = uint16(0x0206)
+	fpc = pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
 }
 
 func TestExecANNN(t *testing.T) {
