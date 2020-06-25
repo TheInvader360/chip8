@@ -6,7 +6,9 @@ import (
 	"image/color"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
+	"time"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -82,6 +84,7 @@ var (
 )
 
 func init() {
+	rand.Seed(time.Now().UnixNano())
 	opcode = 0
 	mem = [memS]byte{}
 	for i := 0; i < len(fontset); i++ {
@@ -326,9 +329,16 @@ func exec2NNN() string {
 }
 
 func exec3XNN() string {
-	//TODO if(vx==nn)
+	//if(vx==nn) skip next instruction
+	x := opcode & 0x0F00 >> 8
+	nn := byte(opcode & 0x00FF)
+	skip := false
+	if v[x] == nn {
+		skip = true
+		pc += 2
+	}
 	pc += 2
-	return fmt.Sprintf("exec3XNN 0x%04X", opcode)
+	return fmt.Sprintf("exec3XNN 0x%04X: pc=0x%04X {skip=%t}", opcode, pc, skip)
 }
 
 func exec4XNN() string {
@@ -422,9 +432,12 @@ func execBNNN() string {
 }
 
 func execCXNN() string {
-	//TODO vx=rand()&nn
+	//vx=rand()&nn
+	x := opcode & 0x0F00 >> 8
+	nn := byte(opcode & 0x00FF)
+	v[x] = byte(rand.Intn(255)) & nn
 	pc += 2
-	return fmt.Sprintf("execCXNN 0x%04X", opcode)
+	return fmt.Sprintf("execCXNN 0x%04X: pc=0x%04X v[%01X]=%02X", opcode, pc, x, v[x])
 }
 
 func execDXYN() string {
@@ -469,20 +482,35 @@ func execDXYN() string {
 }
 
 func execEX9E() string {
-	//TODO if(key()==vx)
-	return fmt.Sprintf("execEX9E 0x%04X", opcode)
+	//if the key stored in vx is pressed, skip next instruction
+	x := opcode & 0x0F00 >> 8
+	skip := false
+	if keys[v[x]] == 1 {
+		skip = true
+		pc += 2
+	}
+	pc += 2
+	return fmt.Sprintf("execEX9E 0x%04X: pc=0x%04X {skip=%t}", opcode, pc, skip)
 }
 
 func execEXA1() string {
-	//TODO if(key()!=vx)
+	//if the key stored in vx is not pressed, skip next instruction
+	x := opcode & 0x0F00 >> 8
+	skip := false
+	if keys[v[x]] == 0 {
+		skip = true
+		pc += 2
+	}
 	pc += 2
-	return fmt.Sprintf("execEXA1 0x%04X", opcode)
+	return fmt.Sprintf("execEXA1 0x%04X: pc=0x%04X {skip=%t}", opcode, pc, skip)
 }
 
 func execFX07() string {
-	//TODO vx=get_delay()
+	//vx=delay_timer
+	x := opcode & 0x0F00 >> 8
+	v[x] = delayTimer
 	pc += 2
-	return fmt.Sprintf("execFX07 0x%04X", opcode)
+	return fmt.Sprintf("execFX07 0x%04X: pc=0x%04X v[%01X]=%02X", opcode, pc, x, v[x])
 }
 
 func execFX0A() string {
@@ -491,12 +519,15 @@ func execFX0A() string {
 }
 
 func execFX15() string {
-	//TODO delay_timer(vx)
-	return fmt.Sprintf("execFX15 0x%04X", opcode)
+	//delay_timer=vx
+	x := opcode & 0x0F00 >> 8
+	delayTimer = v[x]
+	pc += 2
+	return fmt.Sprintf("execFX15 0x%04X: pc=0x%04X delayTimer=%02X", opcode, pc, delayTimer)
 }
 
 func execFX18() string {
-	//TODO sound_timer(vx)
+	//TODO sound_timer=vx
 	return fmt.Sprintf("execFX18 0x%04X", opcode)
 }
 

@@ -414,8 +414,33 @@ func TestExec2NNN(t *testing.T) {
 }
 
 func TestExec3XNN(t *testing.T) {
-	//TODO if(vx==nn)
+	//if(vx==nn) skip next instruction
 	opcode = 0x3A1D
+	pc = 0x0000
+	v = [vS]byte{}
+	v[0xA] = 0x1D
+	ertn := "exec3XNN 0x3A1D: pc=0x0004 {skip=true}"
+	frtn := exec3XNN()
+	epc := uint16(0x0004)
+	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
+
+	v[0xA] = 0xFD
+	ertn = "exec3XNN 0x3A1D: pc=0x0006 {skip=false}"
+	frtn = exec3XNN()
+	epc = uint16(0x0006)
+	fpc = pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
 }
 
 func TestExec4XNN(t *testing.T) {
@@ -548,8 +573,25 @@ func TestExecBNNN(t *testing.T) {
 }
 
 func TestExecCXNN(t *testing.T) {
-	//TODO vx=rand()&nn
-	opcode = 0xC4CE
+	//vx=rand()&nn
+	opcode = 0xC400
+	pc = 0x0000
+	ertn := "execCXNN 0xC400: pc=0x0002 v[4]=00"
+	frtn := execCXNN()
+	evx := byte(0x00)
+	fvx := v[0x4]
+	epc := uint16(0x0002)
+	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fvx != evx {
+		t.Errorf("Expected 0x%02X, found 0x%02X.", evx, fvx)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
+	//TODO: reliable tests where nn is not zero...
 }
 
 func TestExecDXYN(t *testing.T) {
@@ -564,6 +606,7 @@ func TestExecDXYN(t *testing.T) {
 	mem[0x0102] = 0x40
 	mem[0x0103] = 0x20
 	i = 0x0101
+	v = [vS]byte{}
 	v[7] = 5
 	v[9] = 2
 	ertn := "execDXYN 0xD793: pc=0x0002 gfx={updated} render=true"
@@ -641,18 +684,89 @@ func TestExecDXYN(t *testing.T) {
 }
 
 func TestExecEX9E(t *testing.T) {
-	//TODO if(key()==vx)
+	//if the key stored in vx is pressed, skip next instruction
 	opcode = 0xE39E
+	pc = 0x0000
+	v = [vS]byte{}
+	v[3] = 5
+	keys = [kS]byte{}
+	ertn := "execEX9E 0xE39E: pc=0x0002 {skip=false}"
+	frtn := execEX9E()
+	epc := uint16(0x0002)
+	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
+
+	keys[5] = 1
+	ertn = "execEX9E 0xE39E: pc=0x0006 {skip=true}"
+	frtn = execEX9E()
+	epc = uint16(0x0006)
+	fpc = pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
 }
 
 func TestExecEXA1(t *testing.T) {
-	//TODO if(key()!=vx)
+	//if the key stored in vx is not pressed, skip next instruction
 	opcode = 0xE2A1
+	pc = 0x0000
+	v = [vS]byte{}
+	v[2] = 5
+	keys = [kS]byte{}
+	ertn := "execEXA1 0xE2A1: pc=0x0004 {skip=true}"
+	frtn := execEXA1()
+	epc := uint16(0x0004)
+	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
+
+	keys[5] = 1
+	ertn = "execEXA1 0xE2A1: pc=0x0006 {skip=false}"
+	frtn = execEXA1()
+	epc = uint16(0x0006)
+	fpc = pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
 }
 
 func TestExecFX07(t *testing.T) {
-	//TODO vx=get_delay()
+	//vx=delay_timer
 	opcode = 0xF807
+	pc = 0x0000
+	v = [vS]byte{}
+	v[8] = 0xFF
+	delayTimer = 0xAB
+	ertn := "execFX07 0xF807: pc=0x0002 v[8]=AB"
+	frtn := execFX07()
+	evx := byte(0xAB)
+	fvx := v[8]
+	epc := uint16(0x0002)
+	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fvx != evx {
+		t.Errorf("Expected 0x%02X, found 0x%02X.", evx, fvx)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
 }
 
 func TestExecFX0A(t *testing.T) {
@@ -661,12 +775,30 @@ func TestExecFX0A(t *testing.T) {
 }
 
 func TestExecFX15(t *testing.T) {
-	//TODO delay_timer(vx)
-	opcode = 0xF815
+	//delay_timer=vx
+	opcode = 0xF715
+	pc = 0x0000
+	v = [vS]byte{}
+	v[7] = 0xA1
+	ertn := "execFX15 0xF715: pc=0x0002 delayTimer=A1"
+	frtn := execFX15()
+	edt := byte(0xA1)
+	fdt := delayTimer
+	epc := uint16(0x0002)
+	fpc := pc
+	if frtn != ertn {
+		t.Errorf("Expected %s, found %s.", ertn, frtn)
+	}
+	if fdt != edt {
+		t.Errorf("Expected 0x%02X, found 0x%02X.", edt, fdt)
+	}
+	if fpc != epc {
+		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
+	}
 }
 
 func TestExecFX18(t *testing.T) {
-	//TODO sound_timer(vx)
+	//TODO sound_timer=vx
 	opcode = 0xF118
 }
 
