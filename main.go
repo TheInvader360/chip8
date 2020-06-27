@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
@@ -17,27 +18,27 @@ import (
 //--- client
 
 const (
-	fullscreen     = false
-	screenW        = 960
-	screenH        = 480
-	ticksPerSecond = 60
+	scrF = false //client fullscreen
+	scrW = 960   //client screen width in pixels
+	scrH = 480   //client screen height in pixels
+	tps  = 60    //client max ticks per second
 
-	gfxW   = 64
-	gfxH   = 32
-	pixelW = float64(screenW / gfxW)
-	pixelH = float64(screenH / gfxH)
+	gfxW = 64                   //chip8 gfx width
+	gfxH = 32                   //chip8 gfx height
+	pixW = float64(scrW / gfxW) //pixel width scale factor
+	pixH = float64(scrH / gfxH) //pixel height scale factor
 )
 
 var (
-	bg     = color.NRGBA{0x00, 0x00, 0x00, 0xff}
-	fg     = color.NRGBA{0x00, 0xff, 0x00, 0xff}
-	keyMap = map[ebiten.Key]uint16{
+	bg = color.NRGBA{0x00, 0x00, 0x00, 0xff}
+	fg = color.NRGBA{0x00, 0xff, 0x00, 0xff}
+	km = map[ebiten.Key]uint16{
 		ebiten.Key1: 0x1, ebiten.Key2: 0x2, ebiten.Key3: 0x3, ebiten.Key4: 0xC,
 		ebiten.KeyQ: 0x4, ebiten.KeyW: 0x5, ebiten.KeyE: 0x6, ebiten.KeyR: 0xD,
 		ebiten.KeyA: 0x7, ebiten.KeyS: 0x8, ebiten.KeyD: 0x9, ebiten.KeyF: 0xE,
 		ebiten.KeyZ: 0xA, ebiten.KeyX: 0x0, ebiten.KeyC: 0xB, ebiten.KeyV: 0xF,
 	}
-	loaded = false
+	rom = false
 )
 
 type Game struct {
@@ -51,51 +52,53 @@ func NewGame() *Game {
 }
 
 func init() {
-	ebiten.SetMaxTPS(ticksPerSecond)
+	ebiten.SetMaxTPS(tps)
 	rand.Seed(time.Now().UnixNano())
 }
 
 func (g *Game) Update(screen *ebiten.Image) error {
-	if !loaded {
+	if !rom {
 		loadRom(g.vm)
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
 		os.Exit(0)
 	}
 	g.vm.emulateCycle()
+	fmt.Println(g.vm)
 	updateKeys(g.vm)
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	if g.vm.render {
+	if g.vm.rg {
 		screen.Fill(bg)
 		for y := 0; y < gfxH; y++ {
 			for x := 0; x < gfxW; x++ {
 				if g.vm.gfx[y*gfxW+x] == 1 {
-					ebitenutil.DrawRect(screen, float64(x)*pixelW, float64(y)*pixelH, pixelW, pixelH, fg)
+					ebitenutil.DrawRect(screen,
+						float64(x)*pixW, float64(y)*pixH, pixW, pixH, fg)
 				}
 			}
 		}
+		g.vm.rg = false
 	}
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.CurrentTPS()))
-	//fmt.Println(keys)
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("%0.2f", ebiten.CurrentTPS()))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return screenW, screenH
+	return scrW, scrH
 }
 
 func loadRom(vm *chip8) {
 	path := flag.String("path", "./rom/test/ti360.ch8", "path to rom file")
 	flag.Parse()
 
-	rom, err := os.Open(*path)
+	file, err := os.Open(*path)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	bytes, err := ioutil.ReadAll(rom)
+	bytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -105,18 +108,18 @@ func loadRom(vm *chip8) {
 	}
 	fmt.Println(vm.mem)
 
-	loaded = true
+	rom = true
 }
 
 func updateKeys(vm *chip8) {
-	for phys, virt := range keyMap {
-		vm.keys[virt] = boolToByte(ebiten.IsKeyPressed(phys))
+	for phys, virt := range km {
+		vm.key[virt] = boolToByte(ebiten.IsKeyPressed(phys))
 	}
 }
 
 func main() {
-	ebiten.SetFullscreen(fullscreen)
-	ebiten.SetWindowSize(screenW, screenH)
+	ebiten.SetFullscreen(scrF)
+	ebiten.SetWindowSize(scrW, scrH)
 	ebiten.SetWindowTitle("CHIP-8 by TheInvader360")
 	if err := ebiten.RunGame(NewGame()); err != nil {
 		panic(err)
@@ -135,21 +138,21 @@ func boolToByte(b bool) byte {
 //----- vm
 
 type chip8 struct {
-	opcode     uint16     //current opcode (each opcode is two bytes long)
-	mem        [4096]byte //system memory (4kb total. 0x200-0xFFF: rom and ram)
-	v          [16]byte   //registers (v0-vE: general purpose. vF: carry flag)
-	i          uint16     //index register
-	pc         uint16     //program counter
-	gfx        [2048]byte //vF is set upon pixel collision in draw instruction
-	delayTimer byte       //counts down to zero at 60hz
-	soundTimer byte       //counts down to zero at 60hz
-	stack      [16]uint16 //store program counter in stack before jump/gosub
-	sp         uint16     //stack pointer to remember the level of stack used
-	keys       [16]byte   //stores the current state of the hex keypad (0-F)
-	render     bool       //set by 0x00E0 (cls) and 0xDXYN (draw sprite)
+	mem [4096]byte //system memory (4kb total. 0x200-0xFFF: rom and ram)
+	gfx [2048]byte //vF is set upon pixel collision in draw instruction
+	pc  uint16     //program counter
+	oc  uint16     //current opcode (each opcode is two bytes long)
+	vr  [16]byte   //v registers (v0-vE: general purpose. vF: carry flag)
+	ir  uint16     //index register
+	stk [16]uint16 //store program counter in stack before jump/gosub
+	sp  uint16     //stack pointer to remember the level of stack used
+	key [16]byte   //stores the current state of the hex keypad (0-F)
+	dt  byte       //delay timer counts down to zero at 60hz
+	st  byte       //sound timer counts down to zero at 60hz
+	rg  bool       //redraw gfx - set by 0x00E0 (cls) and 0xDXYN (sprite)
 }
 
-type opcodeExecutor func() string
+type opcodeExecutor func()
 
 var (
 	fontset = []byte{
@@ -175,8 +178,8 @@ var (
 
 func newChip8() *chip8 {
 	vm := chip8{
-		pc:     0x0200,
-		render: true,
+		pc: 0x0200,
+		rg: true,
 	}
 	for i := 0; i < len(fontset); i++ {
 		vm.mem[i] = fontset[i]
@@ -198,10 +201,24 @@ func newChip8() *chip8 {
 	return &vm
 }
 
+func (vm *chip8) String() string {
+	b := strings.Builder{}
+	b.WriteString(fmt.Sprintf("pc:%04X oc:%04X vr:", vm.pc, vm.oc))
+	for i := 0; i < len(vm.vr); i++ {
+		b.WriteString(fmt.Sprintf("%02X ", vm.vr[i]))
+	}
+	b.WriteString(fmt.Sprintf("ir:%04X key:", vm.ir))
+	for i := 0; i < len(vm.key); i++ {
+		b.WriteString(fmt.Sprintf("%d", vm.key[i]))
+	}
+	b.WriteString(fmt.Sprintf(" dt:%02X st:%02X rg:%t", vm.dt, vm.st, vm.rg))
+	return b.String()
+}
+
 func (vm *chip8) emulateCycle() {
-	vm.opcode = vm.fetchOpcode()
-	decoded := vm.decodeOpcode()
-	fmt.Println(opcodeExecutors[decoded]())
+	vm.oc = vm.fetchOpcode()
+	d := vm.decodeOpcode()
+	opcodeExecutors[d]()
 	vm.updateTimers()
 }
 
@@ -228,252 +245,221 @@ func (vm *chip8) decodeOpcode() uint16 {
 		In these cases we go on to compare the last nibble or byte...
 		e.g. 0x00EE & 0x00FF = 0x00EE
 	*/
-	decoded := vm.opcode & 0xF000
-	if decoded == 0x0000 {
-		switch vm.opcode & 0x00FF {
+	d := vm.oc & 0xF000
+	if d == 0x0000 {
+		switch vm.oc & 0x00FF {
 		case 0x00E0:
-			decoded = 0x00E0
+			d = 0x00E0
 		case 0x00EE:
-			decoded = 0x00EE
+			d = 0x00EE
 		}
 	}
-	if decoded == 0x8000 {
-		switch vm.opcode & 0x000F {
+	if d == 0x8000 {
+		switch vm.oc & 0x000F {
 		case 0x0000:
-			decoded = 0x8000
+			d = 0x8000
 		case 0x0001:
-			decoded = 0x8001
+			d = 0x8001
 		case 0x0002:
-			decoded = 0x8002
+			d = 0x8002
 		case 0x0003:
-			decoded = 0x8003
+			d = 0x8003
 		case 0x0004:
-			decoded = 0x8004
+			d = 0x8004
 		case 0x0005:
-			decoded = 0x8005
+			d = 0x8005
 		case 0x0006:
-			decoded = 0x8006
+			d = 0x8006
 		case 0x0007:
-			decoded = 0x8007
+			d = 0x8007
 		case 0x000E:
-			decoded = 0x800E
+			d = 0x800E
 		}
 	}
-	if decoded == 0xE000 {
-		switch vm.opcode & 0x00FF {
+	if d == 0xE000 {
+		switch vm.oc & 0x00FF {
 		case 0x009E:
-			decoded = 0xE09E
+			d = 0xE09E
 		case 0x00A1:
-			decoded = 0xE0A1
+			d = 0xE0A1
 		}
 	}
-	if decoded == 0xF000 {
-		switch vm.opcode & 0x00FF {
+	if d == 0xF000 {
+		switch vm.oc & 0x00FF {
 		case 0x0007:
-			decoded = 0xF007
+			d = 0xF007
 		case 0x000A:
-			decoded = 0xF00A
+			d = 0xF00A
 		case 0x0015:
-			decoded = 0xF015
+			d = 0xF015
 		case 0x0018:
-			decoded = 0xF018
+			d = 0xF018
 		case 0x001E:
-			decoded = 0xF01E
+			d = 0xF01E
 		case 0x0029:
-			decoded = 0xF029
+			d = 0xF029
 		case 0x0033:
-			decoded = 0xF033
+			d = 0xF033
 		case 0x0055:
-			decoded = 0xF055
+			d = 0xF055
 		case 0x0065:
-			decoded = 0xF065
+			d = 0xF065
 		}
 	}
-	return decoded
+	return d
 }
 
 func (vm *chip8) updateTimers() {
 	//Count down to zero
-	if vm.delayTimer > 0 {
-		vm.delayTimer--
+	if vm.dt > 0 {
+		vm.dt--
 	}
-	if vm.soundTimer > 0 {
-		vm.soundTimer--
+	if vm.st > 0 {
+		vm.st--
 	}
 }
 
-func (vm *chip8) exec0NNN() string {
-	//not implemented
-	return fmt.Sprintf("exec0NNN 0x%04X: pc=0x%04X (not implemented)", vm.opcode, vm.pc)
+func (vm *chip8) exec0NNN() {
+	//do nothing
 }
 
-func (vm *chip8) exec00E0() string {
-	//disp_clear()
+func (vm *chip8) exec00E0() {
+	//clear gfx
 	for i := range vm.gfx {
 		vm.gfx[i] = 0
 	}
 	vm.pc += 2
-	vm.render = true
-	return fmt.Sprintf("exec00E0 0x%04X: pc=0x%04X gfx={cleared} render=%t", vm.opcode, vm.pc, vm.render)
+	vm.rg = true
 }
 
-func (vm *chip8) exec00EE() string {
+func (vm *chip8) exec00EE() {
 	//TODO return
-	return fmt.Sprintf("exec00EE 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) exec1NNN() string {
+func (vm *chip8) exec1NNN() {
 	//goto nnn
-	vm.pc = vm.opcode & 0x0FFF
-	return fmt.Sprintf("exec1NNN 0x%04X: pc=0x%04X (goto)", vm.opcode, vm.pc)
+	vm.pc = vm.oc & 0x0FFF
 }
 
-func (vm *chip8) exec2NNN() string {
+func (vm *chip8) exec2NNN() {
 	//call subroutine (increment sp, put current pc on stack, set pc to nnn)
-	nnn := vm.opcode & 0x0FFF
+	nnn := vm.oc & 0x0FFF
 	vm.sp++
-	vm.stack[vm.sp] = vm.pc
+	vm.stk[vm.sp] = vm.pc
 	vm.pc = nnn
-	return fmt.Sprintf("exec2NNN 0x%04X: pc=0x%04X sp=0x%04X", vm.opcode, vm.pc, vm.sp)
 }
 
-func (vm *chip8) exec3XNN() string {
+func (vm *chip8) exec3XNN() {
 	//if(vx==nn) skip next instruction
-	x := vm.opcode & 0x0F00 >> 8
-	nn := byte(vm.opcode & 0x00FF)
-	skip := false
-	if vm.v[x] == nn {
-		skip = true
+	x := vm.oc & 0x0F00 >> 8
+	nn := byte(vm.oc & 0x00FF)
+	if vm.vr[x] == nn {
 		vm.pc += 2
 	}
 	vm.pc += 2
-	return fmt.Sprintf("exec3XNN 0x%04X: pc=0x%04X {skip=%t}", vm.opcode, vm.pc, skip)
 }
 
-func (vm *chip8) exec4XNN() string {
+func (vm *chip8) exec4XNN() {
 	//if(vx!=nn) skip next instruction
-	x := vm.opcode & 0x0F00 >> 8
-	nn := byte(vm.opcode & 0x00FF)
-	skip := false
-	if vm.v[x] != nn {
-		skip = true
+	x := vm.oc & 0x0F00 >> 8
+	nn := byte(vm.oc & 0x00FF)
+	if vm.vr[x] != nn {
 		vm.pc += 2
 	}
 	vm.pc += 2
-	return fmt.Sprintf("exec4XNN 0x%04X: pc=0x%04X {skip=%t}", vm.opcode, vm.pc, skip)
 }
 
-func (vm *chip8) exec5XY0() string {
+func (vm *chip8) exec5XY0() {
 	//if(vx==vy) skip next instruction
-	x := vm.opcode & 0x0F00 >> 8
-	y := vm.opcode & 0x00F0 >> 4
-	skip := false
-	if vm.v[x] == vm.v[y] {
-		skip = true
+	x := vm.oc & 0x0F00 >> 8
+	y := vm.oc & 0x00F0 >> 4
+	if vm.vr[x] == vm.vr[y] {
 		vm.pc += 2
 	}
 	vm.pc += 2
-	return fmt.Sprintf("exec5XY0 0x%04X: pc=0x%04X {skip=%t}", vm.opcode, vm.pc, skip)
 }
 
-func (vm *chip8) exec6XNN() string {
+func (vm *chip8) exec6XNN() {
 	//vx=nn
-	x := vm.opcode & 0x0F00 >> 8
-	nn := byte(vm.opcode & 0x00FF)
-	vm.v[x] = nn
+	x := vm.oc & 0x0F00 >> 8
+	nn := byte(vm.oc & 0x00FF)
+	vm.vr[x] = nn
 	vm.pc += 2
-	return fmt.Sprintf("exec6XNN 0x%04X: pc=0x%04X v[%01X]=%02X", vm.opcode, vm.pc, x, vm.v[x])
 }
 
-func (vm *chip8) exec7XNN() string {
+func (vm *chip8) exec7XNN() {
 	//vx+=nn
-	x := vm.opcode & 0x0F00 >> 8
-	nn := byte(vm.opcode & 0x00FF)
-	vm.v[x] += nn
+	x := vm.oc & 0x0F00 >> 8
+	nn := byte(vm.oc & 0x00FF)
+	vm.vr[x] += nn
 	vm.pc += 2
-	return fmt.Sprintf("exec7XNN 0x%04X: pc=0x%04X v[%01X]=%02X", vm.opcode, vm.pc, x, vm.v[x])
 }
 
-func (vm *chip8) exec8XY0() string {
+func (vm *chip8) exec8XY0() {
 	//TODO vx=vy
-	return fmt.Sprintf("exec8XY0 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) exec8XY1() string {
+func (vm *chip8) exec8XY1() {
 	//TODO vx=vx|vy
-	return fmt.Sprintf("exec8XY1 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) exec8XY2() string {
+func (vm *chip8) exec8XY2() {
 	//TODO vx=vx&vy
-	return fmt.Sprintf("exec8XY2 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) exec8XY3() string {
+func (vm *chip8) exec8XY3() {
 	//TODO vx=vx^vy
-	return fmt.Sprintf("exec8XY3 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) exec8XY4() string {
+func (vm *chip8) exec8XY4() {
 	//TODO vx+=vy
-	return fmt.Sprintf("exec8XY4 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) exec8XY5() string {
+func (vm *chip8) exec8XY5() {
 	//TODO vx-=vy
-	return fmt.Sprintf("exec8XY5 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) exec8XY6() string {
+func (vm *chip8) exec8XY6() {
 	//TODO vx>>=1
-	return fmt.Sprintf("exec8XY6 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) exec8XY7() string {
+func (vm *chip8) exec8XY7() {
 	//TODO vx=vy-vx
-	return fmt.Sprintf("exec8XY7 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) exec8XYE() string {
+func (vm *chip8) exec8XYE() {
 	//TODO vx<<=1
-	return fmt.Sprintf("exec8XYE 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) exec9XY0() string {
+func (vm *chip8) exec9XY0() {
 	//if(vx!=vy) skip next instruction
-	x := vm.opcode & 0x0F00 >> 8
-	y := vm.opcode & 0x00F0 >> 4
-	skip := false
-	if vm.v[x] != vm.v[y] {
-		skip = true
+	x := vm.oc & 0x0F00 >> 8
+	y := vm.oc & 0x00F0 >> 4
+	if vm.vr[x] != vm.vr[y] {
 		vm.pc += 2
 	}
 	vm.pc += 2
-	return fmt.Sprintf("exec9XY0 0x%04X: pc=0x%04X {skip=%t}", vm.opcode, vm.pc, skip)
 }
 
-func (vm *chip8) execANNN() string {
+func (vm *chip8) execANNN() {
 	//i=nnn
-	vm.i = vm.opcode & 0x0FFF
+	vm.ir = vm.oc & 0x0FFF
 	vm.pc += 2
-	return fmt.Sprintf("execANNN 0x%04X: pc=0x%04X i=0x%04X", vm.opcode, vm.pc, vm.i)
 }
 
-func (vm *chip8) execBNNN() string {
+func (vm *chip8) execBNNN() {
 	//TODO pc=v0+nnn
-	return fmt.Sprintf("execBNNN 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) execCXNN() string {
+func (vm *chip8) execCXNN() {
 	//vx=rand()&nn
-	x := vm.opcode & 0x0F00 >> 8
-	nn := byte(vm.opcode & 0x00FF)
-	vm.v[x] = byte(rand.Intn(255)) & nn
+	x := vm.oc & 0x0F00 >> 8
+	nn := byte(vm.oc & 0x00FF)
+	vm.vr[x] = byte(rand.Intn(255)) & nn
 	vm.pc += 2
-	return fmt.Sprintf("execCXNN 0x%04X: pc=0x%04X v[%01X]=%02X", vm.opcode, vm.pc, x, vm.v[x])
 }
 
-func (vm *chip8) execDXYN() string {
+func (vm *chip8) execDXYN() {
 	//draw(vx,vy,n)
 	/*
 		Read n bytes (data) from memory, starting at i.
@@ -482,14 +468,14 @@ func (vm *chip8) execDXYN() string {
 		If any pixels are erased, v[F] is set to 1, otherwise it is set to 0.
 		Sprites wrap to opposite side of screen if they overlap an edge.
 	*/
-	vx := uint16(vm.v[vm.opcode&0x0F00>>8])
-	vy := uint16(vm.v[vm.opcode&0x00F0>>4])
-	n := vm.opcode & 0x000F
-	vm.v[0xF] = 0
+	vx := uint16(vm.vr[vm.oc&0x0F00>>8])
+	vy := uint16(vm.vr[vm.oc&0x00F0>>4])
+	n := vm.oc & 0x000F
+	vm.vr[0xF] = 0
 	//iterate over all of the sprite's rows
 	for row := uint16(0); row < n; row++ {
 		//get the byte for the current row
-		data := vm.mem[vm.i+row]
+		data := vm.mem[vm.ir+row]
 		//iterate over all of the current row's cols
 		for col := uint16(0); col < 8; col++ {
 			//calculate the gfx index for the current row and col
@@ -502,7 +488,7 @@ func (vm *chip8) execDXYN() string {
 				}
 				//set v[F] if pixel is to be erased
 				if vm.gfx[idx] == 1 {
-					vm.v[0xF] = 1
+					vm.vr[0xF] = 1
 				}
 				//bitwise XOR operation to toggle pixel value
 				vm.gfx[idx] ^= 1
@@ -510,81 +496,65 @@ func (vm *chip8) execDXYN() string {
 		}
 	}
 	vm.pc += 2
-	vm.render = true
-	return fmt.Sprintf("execDXYN 0x%04X: pc=0x%04X gfx={updated} render=%t", vm.opcode, vm.pc, vm.render)
+	vm.rg = true
 }
 
-func (vm *chip8) execEX9E() string {
+func (vm *chip8) execEX9E() {
 	//if the key stored in vx is pressed, skip next instruction
-	x := vm.opcode & 0x0F00 >> 8
-	skip := false
-	if vm.keys[vm.v[x]] == 1 {
-		skip = true
+	x := vm.oc & 0x0F00 >> 8
+	if vm.key[vm.vr[x]] == 1 {
 		vm.pc += 2
 	}
 	vm.pc += 2
-	return fmt.Sprintf("execEX9E 0x%04X: pc=0x%04X {skip=%t}", vm.opcode, vm.pc, skip)
 }
 
-func (vm *chip8) execEXA1() string {
+func (vm *chip8) execEXA1() {
 	//if the key stored in vx is not pressed, skip next instruction
-	x := vm.opcode & 0x0F00 >> 8
-	skip := false
-	if vm.keys[vm.v[x]] == 0 {
-		skip = true
+	x := vm.oc & 0x0F00 >> 8
+	if vm.key[vm.vr[x]] == 0 {
 		vm.pc += 2
 	}
 	vm.pc += 2
-	return fmt.Sprintf("execEXA1 0x%04X: pc=0x%04X {skip=%t}", vm.opcode, vm.pc, skip)
 }
 
-func (vm *chip8) execFX07() string {
+func (vm *chip8) execFX07() {
 	//vx=delay_timer
-	x := vm.opcode & 0x0F00 >> 8
-	vm.v[x] = vm.delayTimer
+	x := vm.oc & 0x0F00 >> 8
+	vm.vr[x] = vm.dt
 	vm.pc += 2
-	return fmt.Sprintf("execFX07 0x%04X: pc=0x%04X v[%01X]=%02X", vm.opcode, vm.pc, x, vm.v[x])
 }
 
-func (vm *chip8) execFX0A() string {
+func (vm *chip8) execFX0A() {
 	//TODO vx=get_key()
-	return fmt.Sprintf("execFX0A 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) execFX15() string {
+func (vm *chip8) execFX15() {
 	//delay_timer=vx
-	x := vm.opcode & 0x0F00 >> 8
-	vm.delayTimer = vm.v[x]
+	x := vm.oc & 0x0F00 >> 8
+	vm.dt = vm.vr[x]
 	vm.pc += 2
-	return fmt.Sprintf("execFX15 0x%04X: pc=0x%04X delayTimer=%02X", vm.opcode, vm.pc, vm.delayTimer)
 }
 
-func (vm *chip8) execFX18() string {
+func (vm *chip8) execFX18() {
 	//TODO sound_timer=vx
-	return fmt.Sprintf("execFX18 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) execFX1E() string {
+func (vm *chip8) execFX1E() {
 	//TODO i+=vx
-	return fmt.Sprintf("execFX1E 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) execFX29() string {
+func (vm *chip8) execFX29() {
 	//TODO i=sprite_addr[vx]
-	return fmt.Sprintf("execFX29 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) execFX33() string {
+func (vm *chip8) execFX33() {
 	//TODO set_bcd(vx);*(i+0)=bcd(3);*(i+1)=bcd(2);*(i+2)=bcd(1);
-	return fmt.Sprintf("execFX33 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) execFX55() string {
+func (vm *chip8) execFX55() {
 	//TODO reg_dump(vx,&i)
-	return fmt.Sprintf("execFX55 0x%04X", vm.opcode)
 }
 
-func (vm *chip8) execFX65() string {
+func (vm *chip8) execFX65() {
 	//TODO reg_load(vx,&i)
-	return fmt.Sprintf("execFX65 0x%04X", vm.opcode)
 }
