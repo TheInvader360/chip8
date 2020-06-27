@@ -11,8 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/inpututil"
+
+	"github.com/hajimehoshi/ebiten"
 )
 
 //--- client
@@ -38,7 +40,9 @@ var (
 		ebiten.KeyA: 0x7, ebiten.KeyS: 0x8, ebiten.KeyD: 0x9, ebiten.KeyF: 0xE,
 		ebiten.KeyZ: 0xA, ebiten.KeyX: 0x0, ebiten.KeyC: 0xB, ebiten.KeyV: 0xF,
 	}
-	rom = false
+	rom    = false
+	paused = false
+	view   *ebiten.Image
 )
 
 type Game struct {
@@ -54,6 +58,7 @@ func NewGame() *Game {
 func init() {
 	ebiten.SetMaxTPS(tps)
 	rand.Seed(time.Now().UnixNano())
+	view, _ = ebiten.NewImage(scrW, scrH, ebiten.FilterDefault)
 }
 
 func (g *Game) Update(screen *ebiten.Image) error {
@@ -63,25 +68,34 @@ func (g *Game) Update(screen *ebiten.Image) error {
 	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
 		os.Exit(0)
 	}
-	g.vm.emulateCycle()
-	fmt.Println(g.vm)
-	updateKeys(g.vm)
+	if inpututil.IsKeyJustPressed(ebiten.KeyP) {
+		paused = !paused
+	}
+	if !paused || inpututil.IsKeyJustPressed(ebiten.KeyO) {
+		g.vm.emulateCycle()
+		fmt.Println(g.vm)
+		updateKeys(g.vm)
+	}
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	//only draw vm.gfx to view (buffer) if vm.rg flag is set
 	if g.vm.rg {
-		screen.Fill(bg)
+		view.Fill(bg)
 		for y := 0; y < gfxH; y++ {
 			for x := 0; x < gfxW; x++ {
 				if g.vm.gfx[y*gfxW+x] == 1 {
-					ebitenutil.DrawRect(screen,
+					ebitenutil.DrawRect(view,
 						float64(x)*pixW, float64(y)*pixH, pixW, pixH, fg)
 				}
 			}
 		}
 		g.vm.rg = false
 	}
+	//draw to screen (ebiten clears the screen each frame)
+	op := &ebiten.DrawImageOptions{}
+	screen.DrawImage(view, op)
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("%0.2f", ebiten.CurrentTPS()))
 }
 
