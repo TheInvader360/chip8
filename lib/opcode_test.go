@@ -1,132 +1,12 @@
-package main
+package lib
 
 import (
 	"testing"
 )
 
-func TestFetchOpcode(t *testing.T) {
-	vm := newChip8()
-	vm.mem[0x0000] = 0xA2
-	vm.mem[0x0001] = 0xF0
-	vm.mem[0x0002] = 0xC5
-	vm.mem[0x0003] = 0x02
-	vm.mem[0x0004] = 0x0F
-	vm.mem[0x0005] = 0xF0
-	vm.mem[0x0006] = 0xAB
-	vm.mem[0x0007] = 0x50
-	vm.mem[0x0008] = 0x20
-	vm.mem[0x0009] = 0xFF
-	for i := 0; i < 5; i++ {
-		vm.pc = uint16(i * 2)
-		oc := vm.fetchOpcode()
-		e := uint16(0x0000)
-		switch i {
-		case 0:
-			e = uint16(0xA2F0)
-		case 1:
-			e = uint16(0xC502)
-		case 2:
-			e = uint16(0x0FF0)
-		case 3:
-			e = uint16(0xAB50)
-		case 4:
-			e = uint16(0x20FF)
-		}
-		if oc != e {
-			t.Errorf("Expected %X, found %X.", e, oc)
-		}
-	}
-}
-
-func TestDecodeOpcode(t *testing.T) {
-	vm := newChip8()
-	m := map[uint16]uint16{
-		uint16(0x0123): uint16(0x0000),
-		uint16(0x00E0): uint16(0x00E0),
-		uint16(0x00EE): uint16(0x00EE),
-		uint16(0x1AB3): uint16(0x1000),
-		uint16(0x205F): uint16(0x2000),
-		uint16(0x3303): uint16(0x3000),
-		uint16(0x45B0): uint16(0x4000),
-		uint16(0x55FF): uint16(0x5000),
-		uint16(0x6FA5): uint16(0x6000),
-		uint16(0x7B09): uint16(0x7000),
-		uint16(0x8120): uint16(0x8000),
-		uint16(0x8341): uint16(0x8001),
-		uint16(0x8562): uint16(0x8002),
-		uint16(0x8783): uint16(0x8003),
-		uint16(0x89A4): uint16(0x8004),
-		uint16(0x8BC5): uint16(0x8005),
-		uint16(0x8DE6): uint16(0x8006),
-		uint16(0x8F07): uint16(0x8007),
-		uint16(0x80FE): uint16(0x800E),
-		uint16(0x9A90): uint16(0x9000),
-		uint16(0xABCD): uint16(0xA000),
-		uint16(0xB963): uint16(0xB000),
-		uint16(0xC5B0): uint16(0xC000),
-		uint16(0xD8AF): uint16(0xD000),
-		uint16(0xEF9E): uint16(0xE09E),
-		uint16(0xE5A1): uint16(0xE0A1),
-		uint16(0xF507): uint16(0xF007),
-		uint16(0xFA0A): uint16(0xF00A),
-		uint16(0xF915): uint16(0xF015),
-		uint16(0xF318): uint16(0xF018),
-		uint16(0xF81E): uint16(0xF01E),
-		uint16(0xFD29): uint16(0xF029),
-		uint16(0xF233): uint16(0xF033),
-		uint16(0xF155): uint16(0xF055),
-		uint16(0xFF65): uint16(0xF065),
-	}
-	for in, out := range m {
-		vm.oc = in
-		d := vm.decodeOpcode()
-		e := out
-		if d != e {
-			t.Errorf("Expected %X, found %X.", e, d)
-		}
-	}
-}
-
-func TestUpdateTimers(t *testing.T) {
-	vm := newChip8()
-	vm.dt = 2
-	vm.st = 1
-	vm.updateTimers()
-	if vm.dt != 1 {
-		t.Errorf("Expected %X, found %X.", 1, vm.dt)
-	}
-	if vm.st != 0 {
-		t.Errorf("Expected %X, found %X.", 0, vm.st)
-	}
-	vm.updateTimers()
-	if vm.dt != 0 {
-		t.Errorf("Expected %X, found %X.", 0, vm.dt)
-	}
-	if vm.st != 0 {
-		t.Errorf("Expected %X, found %X.", 0, vm.st)
-	}
-	vm.updateTimers()
-	if vm.dt != 0 {
-		t.Errorf("Expected %X, found %X.", 0, vm.dt)
-	}
-}
-
-func TestBoolToByte(t *testing.T) {
-	expected := byte(0)
-	found := boolToByte(false)
-	if found != expected {
-		t.Errorf("Expected %d, found %d.", expected, found)
-	}
-	expected = byte(1)
-	found = boolToByte(true)
-	if found != expected {
-		t.Errorf("Expected %d, found %d.", expected, found)
-	}
-}
-
 func TestExec0NNN(t *testing.T) {
 	//do nothing
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x0123
 	vm.exec0NNN()
 	epc := uint16(0x0200)
@@ -138,19 +18,19 @@ func TestExec0NNN(t *testing.T) {
 
 func TestExec00E0(t *testing.T) {
 	//clear gfx
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x00E0
-	vm.gfx[8] = 1
-	vm.gfx[278] = 1
-	vm.gfx[1080] = 1
-	vm.gfx[2000] = 1
+	vm.Gfx[8] = 1
+	vm.Gfx[278] = 1
+	vm.Gfx[1080] = 1
+	vm.Gfx[2000] = 1
 	vm.exec00E0()
 	egfx := [2048]byte{}
-	fgfx := vm.gfx
+	fgfx := vm.Gfx
 	epc := uint16(0x0202)
 	fpc := vm.pc
 	erg := true
-	frg := vm.rg
+	frg := vm.Rg
 	if fgfx != egfx {
 		t.Errorf("Expected %v, found %v.", egfx, fgfx)
 	}
@@ -164,13 +44,13 @@ func TestExec00E0(t *testing.T) {
 
 func TestExec00EE(t *testing.T) {
 	//TODO return
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x00EE
 }
 
 func TestExec1NNN(t *testing.T) {
 	//goto nnn
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x1A9F
 	vm.exec1NNN()
 	epc := uint16(0x0A9F)
@@ -182,7 +62,7 @@ func TestExec1NNN(t *testing.T) {
 
 func TestExec2NNN(t *testing.T) {
 	//call subroutine (increment sp, put current pc on stack, set pc to nnn)
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x2F08
 	vm.exec2NNN()
 	esp := uint16(0x0001)
@@ -204,7 +84,7 @@ func TestExec2NNN(t *testing.T) {
 
 func TestExec3XNN(t *testing.T) {
 	//if(vx==nn) skip next instruction
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x3A1D
 	vm.vr[0xA] = 0x1D
 	vm.exec3XNN()
@@ -224,7 +104,7 @@ func TestExec3XNN(t *testing.T) {
 
 func TestExec4XNN(t *testing.T) {
 	//if(vx!=nn) skip next instruction
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x4247
 	vm.vr[0x2] = 0xAC
 	vm.exec4XNN()
@@ -244,7 +124,7 @@ func TestExec4XNN(t *testing.T) {
 
 func TestExec5XY0(t *testing.T) {
 	//if(vx==vy) skip next instruction
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x5190
 	vm.vr[0x1] = 0xAC
 	vm.vr[0x9] = 0xAC
@@ -265,7 +145,7 @@ func TestExec5XY0(t *testing.T) {
 
 func TestExec6XNN(t *testing.T) {
 	//vx=nn
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x6EFD
 	vm.exec6XNN()
 	evx := byte(0xFD)
@@ -282,7 +162,7 @@ func TestExec6XNN(t *testing.T) {
 
 func TestExec7XNN(t *testing.T) {
 	//vx+=nn
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x7315
 	vm.vr[0x3] = 0xA1
 	vm.exec7XNN()
@@ -300,61 +180,61 @@ func TestExec7XNN(t *testing.T) {
 
 func TestExec8XY0(t *testing.T) {
 	//TODO vx=vy
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x89B0
 }
 
 func TestExec8XY1(t *testing.T) {
 	//TODO vx=vx|vy
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x8DE1
 }
 
 func TestExec8XY2(t *testing.T) {
 	//TODO vx=vx&vy
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x83F2
 }
 
 func TestExec8XY3(t *testing.T) {
 	//TODO vx=vx^vy
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x8AC3
 }
 
 func TestExec8XY4(t *testing.T) {
 	//TODO vx+=vy
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x8474
 }
 
 func TestExec8XY5(t *testing.T) {
 	//TODO vx-=vy
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x89A5
 }
 
 func TestExec8XY6(t *testing.T) {
 	//TODO vx>>=1
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x8206
 }
 
 func TestExec8XY7(t *testing.T) {
 	//TODO vx=vy-vx
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x8197
 }
 
 func TestExec8XYE(t *testing.T) {
 	//TODO vx<<=1
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x8EEE
 }
 
 func TestExec9XY0(t *testing.T) {
 	//if(vx!=vy) skip next instruction
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0x9730
 	vm.vr[0x7] = 0xAC
 	vm.vr[0x3] = 0x47
@@ -375,7 +255,7 @@ func TestExec9XY0(t *testing.T) {
 
 func TestExecANNN(t *testing.T) {
 	//i=nnn
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0xA259
 	vm.execANNN()
 	ei := uint16(0x0259)
@@ -392,13 +272,13 @@ func TestExecANNN(t *testing.T) {
 
 func TestExecBNNN(t *testing.T) {
 	//TODO pc=v0+nnn
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0xBAF2
 }
 
 func TestExecCXNN(t *testing.T) {
 	//vx=rand()&nn
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0xC400
 	vm.execCXNN()
 	evx := byte(0x00)
@@ -416,12 +296,12 @@ func TestExecCXNN(t *testing.T) {
 
 func TestExecDXYN(t *testing.T) {
 	//draw(x,y,n)
-	vm := newChip8()
+	vm := NewChip8()
 	//draw a 3x3 sprite at 5,2 (sprite: diagonal line topleft to bottomright)
 	vm.oc = 0xD793
-	vm.mem[0x0101] = 0x80
-	vm.mem[0x0102] = 0x40
-	vm.mem[0x0103] = 0x20
+	vm.Mem[0x0101] = 0x80
+	vm.Mem[0x0102] = 0x40
+	vm.Mem[0x0103] = 0x20
 	vm.ir = 0x0101
 	vm.vr[7] = 5
 	vm.vr[9] = 2
@@ -430,13 +310,13 @@ func TestExecDXYN(t *testing.T) {
 	egfx[133] = 1
 	egfx[198] = 1
 	egfx[263] = 1
-	fgfx := vm.gfx
+	fgfx := vm.Gfx
 	evf := byte(0)
 	fvf := vm.vr[0xF]
 	epc := uint16(0x0202)
 	fpc := vm.pc
 	erg := true
-	frg := vm.rg
+	frg := vm.Rg
 	if fgfx != egfx {
 		t.Errorf("Expected %v, found %v.", egfx, fgfx)
 	}
@@ -472,7 +352,7 @@ func TestExecDXYN(t *testing.T) {
 
 func TestExecEX9E(t *testing.T) {
 	//if the key stored in vx is pressed, skip next instruction
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0xE39E
 	vm.vr[3] = 5
 	vm.execEX9E()
@@ -481,7 +361,7 @@ func TestExecEX9E(t *testing.T) {
 	if fpc != epc {
 		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
 	}
-	vm.key[5] = 1
+	vm.Key[5] = 1
 	vm.execEX9E()
 	epc = uint16(0x0206)
 	fpc = vm.pc
@@ -492,7 +372,7 @@ func TestExecEX9E(t *testing.T) {
 
 func TestExecEXA1(t *testing.T) {
 	//if the key stored in vx is not pressed, skip next instruction
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0xE2A1
 	vm.vr[2] = 5
 	vm.execEXA1()
@@ -501,7 +381,7 @@ func TestExecEXA1(t *testing.T) {
 	if fpc != epc {
 		t.Errorf("Expected 0x%04X, found 0x%04X.", epc, fpc)
 	}
-	vm.key[5] = 1
+	vm.Key[5] = 1
 	vm.execEXA1()
 	epc = uint16(0x0206)
 	fpc = vm.pc
@@ -512,7 +392,7 @@ func TestExecEXA1(t *testing.T) {
 
 func TestExecFX07(t *testing.T) {
 	//vx=delay_timer
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0xF807
 	vm.vr[8] = 0xFF
 	vm.dt = 0xAB
@@ -531,13 +411,13 @@ func TestExecFX07(t *testing.T) {
 
 func TestExecFX0A(t *testing.T) {
 	//TODO vx=get_key()
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0xFC0A
 }
 
 func TestExecFX15(t *testing.T) {
 	//delay_timer=vx
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0xF715
 	vm.vr[7] = 0xA1
 	vm.execFX15()
@@ -555,36 +435,36 @@ func TestExecFX15(t *testing.T) {
 
 func TestExecFX18(t *testing.T) {
 	//TODO sound_timer=vx
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0xF118
 }
 
 func TestExecFX1E(t *testing.T) {
 	//TODO i+=vx
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0xFF1E
 }
 
 func TestExecFX29(t *testing.T) {
 	//TODO i=sprite_addr[vx]
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0xF329
 }
 
 func TestExecFX33(t *testing.T) {
 	//TODO set_bcd(vx);*(i+0)=bcd(3);*(i+1)=bcd(2);*(i+2)=bcd(1);
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0xF533
 }
 
 func TestExecFX55(t *testing.T) {
 	//TODO reg_dump(vx,&i)
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0xFC55
 }
 
 func TestExecFX65(t *testing.T) {
 	//TODO reg_load(vx,&i)
-	vm := newChip8()
+	vm := NewChip8()
 	vm.oc = 0xFF65
 }
