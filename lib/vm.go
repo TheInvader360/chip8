@@ -74,7 +74,7 @@ func NewChip8() *Chip8 {
 	return &vm
 }
 
-func (vm *Chip8) String() string {
+func (vm *Chip8) DebugInfo() string {
 	b := strings.Builder{}
 	b.WriteString(fmt.Sprintf("pc:%04X oc:%04X vr:", vm.pc, vm.oc))
 	for i := 0; i < len(vm.vr); i++ {

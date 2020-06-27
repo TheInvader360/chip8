@@ -4,10 +4,6 @@ import (
 	"math/rand"
 )
 
-func (vm *Chip8) exec0NNN() {
-	//do nothing
-}
-
 func (vm *Chip8) exec00E0() {
 	//clear gfx
 	for i := range vm.Gfx {
@@ -19,6 +15,10 @@ func (vm *Chip8) exec00E0() {
 
 func (vm *Chip8) exec00EE() {
 	//TODO return
+}
+
+func (vm *Chip8) exec0NNN() {
+	//do nothing
 }
 
 func (vm *Chip8) exec1NNN() {

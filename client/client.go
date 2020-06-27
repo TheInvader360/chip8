@@ -69,7 +69,7 @@ func (g *Game) Update(screen *ebiten.Image) error {
 	}
 	if !paused || inpututil.IsKeyJustPressed(ebiten.KeyO) {
 		g.vm.EmulateCycle()
-		fmt.Println(g.vm)
+		fmt.Println(g.vm.DebugInfo())
 		updateKeys(g.vm)
 	}
 	return nil
