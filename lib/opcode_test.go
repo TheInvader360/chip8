@@ -252,26 +252,28 @@ func TestExecCXNN(t *testing.T) {
 
 func TestExecDXYN(t *testing.T) {
 	//draw(x,y,n)
-	//draw a 3x3 sprite at 5,2 (sprite: diagonal line topleft to bottomright)
+
+	//draw a 2x2 sprite at 20,10 (sprite: filled square)
 	f := NewChip8()
-	f.oc = 0xD793
-	f.Mem[0x0101] = 0x80
-	f.Mem[0x0102] = 0x40
-	f.Mem[0x0103] = 0x20
+	f.oc = 0xD792
+	f.Mem[0x0101] = 0xC0
+	f.Mem[0x0102] = 0xC0
 	f.ir = 0x0101
-	f.vr[7] = 5
-	f.vr[9] = 2
+	f.vr[7] = 20
+	f.vr[9] = 10
 	f.execDXYN()
 	e := NewChip8()
-	e.Gfx[133] = 1
-	e.Gfx[198] = 1
-	e.Gfx[263] = 1
+	e.Gfx[20+10*64] = 1
+	e.Gfx[21+10*64] = 1
+	e.Gfx[20+11*64] = 1
+	e.Gfx[21+11*64] = 1
+	e.vr[0xF] = 0
 	e.pc = 0x0202
 	e.Rg = true
 	if f.Gfx != e.Gfx {
 		t.Errorf("Expected %v, found %v.", e.Gfx, f.Gfx)
 	}
-	if f.vr[0xF] != 0 {
+	if f.vr[0xF] != e.vr[0xF] {
 		t.Errorf("Expected %v, found %v.", e.vr[0xF], f.vr[0xF])
 	}
 	if f.pc != e.pc {
@@ -280,21 +282,54 @@ func TestExecDXYN(t *testing.T) {
 	if f.Rg != e.Rg {
 		t.Errorf("Expected %t, found %t.", e.Rg, f.Rg)
 	}
-	//draw the sprite again at 8,5 (no pixels erased)
-	f.vr[7] = 8
-	f.vr[9] = 5
+
+	//draw the sprite again at 63,31 (overlaps all edges)
+	f.vr[7] = 63
+	f.vr[9] = 31
 	f.execDXYN()
-	if f.vr[0xF] != 0 {
+	e.Gfx[0+0*64] = 1
+	e.Gfx[0+31*64] = 1
+	e.Gfx[63+0*64] = 1
+	e.Gfx[63+31*64] = 1
+	e.Gfx[1+1*64] = 0
+	e.Gfx[1+30*64] = 0
+	e.Gfx[62+1*64] = 0
+	e.Gfx[62+30*64] = 0
+	if f.Gfx != e.Gfx {
+		t.Errorf("Expected %v, found %v.", e.Gfx, f.Gfx)
+	}
+
+	//draw the sprite again at 22,12 (no pixels erased)
+	f.vr[7] = 22
+	f.vr[9] = 12
+	f.execDXYN()
+	e.Gfx[22+12*64] = 1
+	e.Gfx[23+12*64] = 1
+	e.Gfx[22+13*64] = 1
+	e.Gfx[23+13*64] = 1
+	e.vr[0xF] = 0
+	if f.Gfx != e.Gfx {
+		t.Errorf("Expected %v, found %v.", e.Gfx, f.Gfx)
+	}
+	if f.vr[0xF] != e.vr[0xF] {
 		t.Errorf("Expected %v, found %v.", e.vr[0xF], f.vr[0xF])
 	}
-	//draw the sprite again at 10,7 (pixel erased)
-	f.vr[7] = 10
-	f.vr[9] = 7
+
+	//draw the sprite again at 23,13 (pixel erased)
+	f.vr[7] = 23
+	f.vr[9] = 13
 	f.execDXYN()
-	if f.vr[0xF] != 1 {
+	e.Gfx[23+13*64] = 0
+	e.Gfx[24+13*64] = 1
+	e.Gfx[23+14*64] = 1
+	e.Gfx[24+14*64] = 1
+	e.vr[0xF] = 1
+	if f.Gfx != e.Gfx {
+		t.Errorf("Expected %v, found %v.", e.Gfx, f.Gfx)
+	}
+	if f.vr[0xF] != e.vr[0xF] {
 		t.Errorf("Expected %v, found %v.", e.vr[0xF], f.vr[0xF])
 	}
-	//TODO: confirm expected out of bounds behaviour then implement test!
 }
 
 func TestExecEX9E(t *testing.T) {

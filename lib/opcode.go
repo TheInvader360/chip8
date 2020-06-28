@@ -159,23 +159,21 @@ func (vm *Chip8) execDXYN() {
 	vm.vr[0xF] = 0
 	//iterate over all of the sprite's rows
 	for row := uint16(0); row < n; row++ {
-		//get the byte for the current row
+		//get the byte for the current sprite row
 		data := vm.Mem[vm.ir+row]
-		//iterate over all of the current row's cols
+		//iterate over all cols in the current sprite row
 		for col := uint16(0); col < 8; col++ {
-			//calculate the gfx index for the current row and col
-			idx := ((vy+row)*GfxW + vx + col)
-			//apply bitwise AND mask to extract a single pixel from data
+			//calculate the gfx index for the current pixel (wrap if necessary)
+			x := (vx + col) % 64
+			y := (vy + row) % 32
+			idx := (x + y*GfxW)
+			//apply bitwise AND mask to extract the pixel's state from data
 			if data&(0b10000000>>col) != 0 {
-				//TODO: confirm that out of bounds draw really should wrap!
-				if idx > uint16(len(vm.Gfx)) {
-					idx -= uint16(len(vm.Gfx))
-				}
-				//set v[F] if pixel is to be erased
+				//set v[F]=1 if pixel is to be erased
 				if vm.Gfx[idx] == 1 {
 					vm.vr[0xF] = 1
 				}
-				//bitwise XOR operation to toggle pixel value
+				//bitwise XOR operation to toggle gfx pixel state
 				vm.Gfx[idx] ^= 1
 			}
 		}
