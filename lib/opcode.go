@@ -14,7 +14,9 @@ func (vm *Chip8) exec00E0() {
 }
 
 func (vm *Chip8) exec00EE() {
-	//TODO return
+	//return (set pc from stack, decrement sp)
+	vm.pc = vm.stk[vm.sp] + 2
+	vm.sp--
 }
 
 func (vm *Chip8) exec0NNN() {
@@ -81,23 +83,48 @@ func (vm *Chip8) exec7XNN() {
 }
 
 func (vm *Chip8) exec8XY0() {
-	//TODO vx=vy
+	//vx=vy
+	x := vm.oc & 0x0F00 >> 8
+	y := vm.oc & 0x00F0 >> 4
+	vm.vr[x] = vm.vr[y]
+	vm.pc += 2
 }
 
 func (vm *Chip8) exec8XY1() {
-	//TODO vx=vx|vy
+	//vx=vx|vy (bitwise OR)
+	x := vm.oc & 0x0F00 >> 8
+	y := vm.oc & 0x00F0 >> 4
+	vm.vr[x] = vm.vr[x] | vm.vr[y]
+	vm.pc += 2
 }
 
 func (vm *Chip8) exec8XY2() {
-	//TODO vx=vx&vy
+	//vx=vx&vy (bitwise AND)
+	x := vm.oc & 0x0F00 >> 8
+	y := vm.oc & 0x00F0 >> 4
+	vm.vr[x] = vm.vr[x] & vm.vr[y]
+	vm.pc += 2
 }
 
 func (vm *Chip8) exec8XY3() {
-	//TODO vx=vx^vy
+	//vx=vx^vy (bitwise XOR)
+	x := vm.oc & 0x0F00 >> 8
+	y := vm.oc & 0x00F0 >> 4
+	vm.vr[x] = vm.vr[x] ^ vm.vr[y]
+	vm.pc += 2
 }
 
 func (vm *Chip8) exec8XY4() {
-	//TODO vx+=vy
+	//vx+=vy (only stores lowest 8 bits of result, if result > 0xFF then vF=1)
+	x := vm.oc & 0x0F00 >> 8
+	y := vm.oc & 0x00F0 >> 4
+	vm.vr[0xF] = 0
+	//use vy>0xFF-vx as vx+vy>0xFF fails e.g. a:=byte(0xF0) b:=byte(0x15) a+b=5
+	if vm.vr[y] > 0xFF-vm.vr[x] {
+		vm.vr[0xF] = 1
+	}
+	vm.vr[x] += vm.vr[y]
+	vm.pc += 2
 }
 
 func (vm *Chip8) exec8XY5() {

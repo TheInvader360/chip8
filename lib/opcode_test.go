@@ -21,9 +21,18 @@ func TestExec00E0(t *testing.T) {
 }
 
 func TestExec00EE(t *testing.T) {
-	//TODO return
+	//return (set pc from stack, decrement sp)
 	f := NewChip8()
 	f.oc = 0x00EE
+	f.stk[1] = 0x1234
+	f.sp = 1
+	f.exec00EE()
+	e := NewChip8()
+	e.oc = 0x00EE
+	e.stk[1] = 0x1234
+	e.sp = 0
+	e.pc = 0x1236
+	checkEqual(t, e, f)
 }
 
 func TestExec0NNN(t *testing.T) {
@@ -145,33 +154,88 @@ func TestExec7XNN(t *testing.T) {
 }
 
 func TestExec8XY0(t *testing.T) {
-	//TODO vx=vy
+	//vx=vy
 	f := NewChip8()
 	f.oc = 0x89B0
+	f.vr[0x9] = 0x0F
+	f.vr[0xB] = 0x0A
+	f.exec8XY0()
+	e := NewChip8()
+	e.oc = 0x89B0
+	e.vr[0x9] = 0x0A
+	e.vr[0xB] = 0x0A
+	e.pc = 0x202
+	checkEqual(t, e, f)
 }
 
 func TestExec8XY1(t *testing.T) {
-	//TODO vx=vx|vy
+	//vx=vx|vy (bitwise OR)
 	f := NewChip8()
 	f.oc = 0x8DE1
+	f.vr[0xD] = 0b01010101
+	f.vr[0xE] = 0b00110011
+	f.exec8XY1()
+	e := NewChip8()
+	e.oc = 0x8DE1
+	e.vr[0xD] = 0b01110111
+	e.vr[0xE] = 0b00110011
+	e.pc = 0x202
+	checkEqual(t, e, f)
 }
 
 func TestExec8XY2(t *testing.T) {
-	//TODO vx=vx&vy
+	//vx=vx&vy (bitwise AND)
 	f := NewChip8()
 	f.oc = 0x83F2
+	f.vr[0x3] = 0b01010101
+	f.vr[0xF] = 0b00110011
+	f.exec8XY2()
+	e := NewChip8()
+	e.oc = 0x83F2
+	e.vr[0x3] = 0b00010001
+	e.vr[0xF] = 0b00110011
+	e.pc = 0x202
+	checkEqual(t, e, f)
 }
 
 func TestExec8XY3(t *testing.T) {
-	//TODO vx=vx^vy
+	//vx=vx^vy (bitwise XOR)
 	f := NewChip8()
 	f.oc = 0x8AC3
+	f.vr[0xA] = 0b01010101
+	f.vr[0xC] = 0b00110011
+	f.exec8XY3()
+	e := NewChip8()
+	e.oc = 0x8AC3
+	e.vr[0xA] = 0b01100110
+	e.vr[0xC] = 0b00110011
+	e.pc = 0x202
+	checkEqual(t, e, f)
 }
 
 func TestExec8XY4(t *testing.T) {
-	//TODO vx+=vy
+	//vx+=vy (only stores lowest 8 bits of result, if result > 0xFF then vF=1)
 	f := NewChip8()
 	f.oc = 0x8474
+	f.vr[0x4] = 0b11111111
+	f.vr[0x7] = 0b00000001
+	f.exec8XY4()
+	e := NewChip8()
+	e.oc = 0x8474
+	e.vr[0x4] = 0b00000000
+	e.vr[0x7] = 0b00000001
+	e.vr[0xF] = 1
+	e.pc = 0x202
+	checkEqual(t, e, f)
+
+	f.vr[0x4] = 0b11000011
+	f.vr[0x7] = 0b00001111
+	f.exec8XY4()
+	e.vr[0x4] = 0b11010010
+	e.vr[0x7] = 0b00001111
+	e.vr[0xF] = 0
+	e.pc = 0x204
+	checkEqual(t, e, f)
 }
 
 func TestExec8XY5(t *testing.T) {
