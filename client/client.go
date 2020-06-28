@@ -36,6 +36,7 @@ var (
 		ebiten.KeyA: 0x7, ebiten.KeyS: 0x8, ebiten.KeyD: 0x9, ebiten.KeyF: 0xE,
 		ebiten.KeyZ: 0xA, ebiten.KeyX: 0x0, ebiten.KeyC: 0xB, ebiten.KeyV: 0xF,
 	}
+	path   *string
 	rom    = false
 	paused = false
 	view   *ebiten.Image
@@ -72,6 +73,10 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		fmt.Println(g.vm.DebugInfo())
 		updateKeys(g.vm)
 	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyI) {
+		g.vm = lib.NewChip8()
+		rom = false
+	}
 	return nil
 }
 
@@ -100,8 +105,10 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func loadRom(vm *lib.Chip8) {
-	path := flag.String("path", "./rom/test/ti360.ch8", "path to rom file")
-	flag.Parse()
+	if path == nil {
+		path = flag.String("path", "./rom/test/ti360.ch8", "path to rom file")
+		flag.Parse()
+	}
 
 	file, err := os.Open(*path)
 	if err != nil {
