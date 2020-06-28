@@ -239,25 +239,29 @@ func TestExec8XY4(t *testing.T) {
 }
 
 func TestExec8XY5(t *testing.T) {
-	//TODO vx-=vy
+	//TODO
+	//vx-=vy (if vx>vy then vF=1)
 	f := NewChip8()
 	f.oc = 0x89A5
 }
 
 func TestExec8XY6(t *testing.T) {
-	//TODO vx>>=1
+	//TODO
+	//vx>>=1 (vF=the lsb of vx, then vx is divided by 2)
 	f := NewChip8()
 	f.oc = 0x8206
 }
 
 func TestExec8XY7(t *testing.T) {
-	//TODO vx=vy-vx
+	//TODO
+	//vx=vy-vx (if vy>vx then vF=1)
 	f := NewChip8()
 	f.oc = 0x8197
 }
 
 func TestExec8XYE(t *testing.T) {
-	//TODO vx<<=1
+	//TODO
+	//vx<<=1 (vF=the msb of vx, then vx is multiplied by 2)
 	f := NewChip8()
 	f.oc = 0x8EEE
 }
@@ -296,7 +300,8 @@ func TestExecANNN(t *testing.T) {
 }
 
 func TestExecBNNN(t *testing.T) {
-	//TODO pc=v0+nnn
+	//TODO
+	//pc=v0+nnn
 	f := NewChip8()
 	f.oc = 0xBAF2
 }
@@ -449,7 +454,8 @@ func TestExecFX07(t *testing.T) {
 }
 
 func TestExecFX0A(t *testing.T) {
-	//TODO vx=get_key()
+	//TODO
+	//vx=get_key() (wait for a key press then store the key value in vx)
 	f := NewChip8()
 	f.oc = 0xFC0A
 }
@@ -469,37 +475,44 @@ func TestExecFX15(t *testing.T) {
 }
 
 func TestExecFX18(t *testing.T) {
-	//TODO sound_timer=vx
+	//TODO
+	//sound_timer=vx
 	f := NewChip8()
 	f.oc = 0xF118
 }
 
 func TestExecFX1E(t *testing.T) {
-	//TODO i+=vx
+	//TODO
+	// i+=vx
 	f := NewChip8()
 	f.oc = 0xFF1E
 }
 
 func TestExecFX29(t *testing.T) {
-	//TODO i=sprite_addr[vx]
+	//TODO
+	//i=sprite_addr[vx] (point i at the font sprite for the value in vx)
 	f := NewChip8()
 	f.oc = 0xF329
 }
 
 func TestExecFX33(t *testing.T) {
-	//TODO set_bcd(vx);*(i+0)=bcd(3);*(i+1)=bcd(2);*(i+2)=bcd(1);
+	//TODO
+	//set_bcd(vx);*(i+0)=bcd(3);*(i+1)=bcd(2);*(i+2)=bcd(1);
+	//store a decimal of vx in memory (e.g. if i=0 and vx=128, m0=1 m1=2 m2=8)
 	f := NewChip8()
 	f.oc = 0xF533
 }
 
 func TestExecFX55(t *testing.T) {
-	//TODO reg_dump(vx,&i)
+	//TODO
+	//reg_dump(vx,&i) (store v0:vx inclusive from addr i, i is not modified)
 	f := NewChip8()
 	f.oc = 0xFC55
 }
 
 func TestExecFX65(t *testing.T) {
-	//TODO reg_load(vx,&i)
+	//TODO
+	//reg_load(vx,&i) (fill v0:vx inclusive from addr i, i is not modified)
 	f := NewChip8()
 	f.oc = 0xFF65
 }

@@ -128,19 +128,43 @@ func (vm *Chip8) exec8XY4() {
 }
 
 func (vm *Chip8) exec8XY5() {
-	//TODO vx-=vy
+	//vx-=vy (if vx>vy then vF=1)
+	x := vm.oc & 0x0F00 >> 8
+	y := vm.oc & 0x00F0 >> 4
+	vm.vr[0xF] = 0
+	if vm.vr[x] > vm.vr[y] {
+		vm.vr[0xF] = 1
+	}
+	vm.vr[x] -= vm.vr[y]
+	vm.pc += 2
 }
 
 func (vm *Chip8) exec8XY6() {
-	//TODO vx>>=1
+	//vx>>=1 (vF=the lsb of vx, then vx is divided by 2)
+	x := vm.oc & 0x0F00 >> 8
+	vm.vr[0xF] = vm.vr[x] & 0b00000001
+	vm.vr[x] >>= 1
+	vm.pc += 2
 }
 
 func (vm *Chip8) exec8XY7() {
-	//TODO vx=vy-vx
+	//vx=vy-vx (if vy>vx then vF=1)
+	x := vm.oc & 0x0F00 >> 8
+	y := vm.oc & 0x00F0 >> 4
+	vm.vr[0xF] = 0
+	if vm.vr[y] > vm.vr[x] {
+		vm.vr[0xF] = 1
+	}
+	vm.vr[x] = vm.vr[y] - vm.vr[x]
+	vm.pc += 2
 }
 
 func (vm *Chip8) exec8XYE() {
-	//TODO vx<<=1
+	//vx<<=1 (vF=the msb of vx, then vx is multiplied by 2)
+	x := vm.oc & 0x0F00 >> 8
+	vm.vr[0xF] = vm.vr[x] & 0b10000000
+	vm.vr[x] <<= 1
+	vm.pc += 2
 }
 
 func (vm *Chip8) exec9XY0() {
@@ -160,7 +184,9 @@ func (vm *Chip8) execANNN() {
 }
 
 func (vm *Chip8) execBNNN() {
-	//TODO pc=v0+nnn
+	//pc=v0+nnn
+	nnn := vm.oc & 0x0FFF
+	vm.pc = uint16(vm.vr[0x0]) + nnn
 }
 
 func (vm *Chip8) execCXNN() {
@@ -235,7 +261,15 @@ func (vm *Chip8) execFX07() {
 }
 
 func (vm *Chip8) execFX0A() {
-	//TODO vx=get_key()
+	//vx=get_key() (wait for a key press then store the key value in vx)
+	x := vm.oc & 0x0F00 >> 8
+	for i, k := range vm.Key {
+		if k == 1 {
+			vm.vr[x] = byte(i)
+			break
+		}
+	}
+	vm.pc += 2
 }
 
 func (vm *Chip8) execFX15() {
@@ -246,25 +280,50 @@ func (vm *Chip8) execFX15() {
 }
 
 func (vm *Chip8) execFX18() {
-	//TODO sound_timer=vx
+	//sound_timer=vx
+	x := vm.oc & 0x0F00 >> 8
+	vm.st = vm.vr[x]
+	vm.pc += 2
 }
 
 func (vm *Chip8) execFX1E() {
-	//TODO i+=vx
+	// i+=vx
+	x := vm.oc & 0x0F00 >> 8
+	vm.ir += uint16(vm.vr[x])
+	vm.pc += 2
 }
 
 func (vm *Chip8) execFX29() {
-	//TODO i=sprite_addr[vx]
+	//i=sprite_addr[vx] (point i at the font sprite for the value in vx)
+	x := vm.oc & 0x0F00 >> 8
+	vm.ir = uint16(vm.vr[x] * 5)
+	vm.pc += 2
 }
 
 func (vm *Chip8) execFX33() {
-	//TODO set_bcd(vx);*(i+0)=bcd(3);*(i+1)=bcd(2);*(i+2)=bcd(1);
+	//set_bcd(vx);*(i+0)=bcd(3);*(i+1)=bcd(2);*(i+2)=bcd(1);
+	//store a decimal of vx in memory (e.g. if i=0 and vx=128, m0=1 m1=2 m2=8)
+	x := vm.oc & 0x0F00 >> 8
+	vm.Mem[vm.ir] = vm.vr[x] / 100         //e.g. 128/100=1
+	vm.Mem[vm.ir+1] = (vm.vr[x] / 10) % 10 //e.g. 128/10=12, then 12%10=2
+	vm.Mem[vm.ir+2] = vm.vr[x] % 10        //e.g. 128%10=8
+	vm.pc += 2
 }
 
 func (vm *Chip8) execFX55() {
-	//TODO reg_dump(vx,&i)
+	//reg_dump(vx,&i) (store v0:vx inclusive from addr i, i is not modified)
+	x := vm.oc & 0x0F00 >> 8
+	for i := uint16(0); i <= x; i++ {
+		vm.Mem[vm.ir+i] = vm.vr[i]
+	}
+	vm.pc += 2
 }
 
 func (vm *Chip8) execFX65() {
-	//TODO reg_load(vx,&i)
+	//reg_load(vx,&i) (fill v0:vx inclusive from addr i, i is not modified)
+	x := vm.oc & 0x0F00 >> 8
+	for i := uint16(0); i <= x; i++ {
+		vm.vr[i] = vm.Mem[vm.ir+i]
+	}
+	vm.pc += 2
 }
