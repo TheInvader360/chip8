@@ -24,12 +24,12 @@ func TestExec00EE(t *testing.T) {
 	//return (set pc from stack, decrement sp)
 	f := NewChip8()
 	f.oc = 0x00EE
-	f.stk[1] = 0x1234
+	f.stk[0x1] = 0x1234
 	f.sp = 1
 	f.exec00EE()
 	e := NewChip8()
 	e.oc = 0x00EE
-	e.stk[1] = 0x1234
+	e.stk[0x1] = 0x1234
 	e.sp = 0
 	e.pc = 0x1236
 	checkEqual(t, e, f)
@@ -64,7 +64,7 @@ func TestExec2NNN(t *testing.T) {
 	e := NewChip8()
 	e.oc = 0x2F08
 	e.sp = 0x0001
-	e.stk[1] = 0x0200
+	e.stk[0x1] = 0x0200
 	e.pc = 0x0F08
 	checkEqual(t, e, f)
 }
@@ -383,7 +383,7 @@ func TestExecCXNN(t *testing.T) {
 	f.execCXNN()
 	e := NewChip8()
 	e.oc = 0xC400
-	e.vr[4] = 0x00
+	e.vr[0x4] = 0x00
 	e.pc = 0x0202
 	checkEqual(t, e, f)
 	//TODO: reliable tests where nn is not zero...
@@ -398,8 +398,8 @@ func TestExecDXYN(t *testing.T) {
 	f.Mem[0x0101] = 0xC0
 	f.Mem[0x0102] = 0xC0
 	f.ir = 0x0101
-	f.vr[7] = 20
-	f.vr[9] = 10
+	f.vr[0x7] = 20
+	f.vr[0x9] = 10
 	f.execDXYN()
 	e := NewChip8()
 	e.Gfx[20+10*64] = 1
@@ -423,8 +423,8 @@ func TestExecDXYN(t *testing.T) {
 	}
 
 	//draw the sprite again at 63,31 (overlaps all edges)
-	f.vr[7] = 63
-	f.vr[9] = 31
+	f.vr[0x7] = 63
+	f.vr[0x9] = 31
 	f.execDXYN()
 	e.Gfx[0+0*64] = 1
 	e.Gfx[0+31*64] = 1
@@ -439,8 +439,8 @@ func TestExecDXYN(t *testing.T) {
 	}
 
 	//draw the sprite again at 22,12 (no pixels erased)
-	f.vr[7] = 22
-	f.vr[9] = 12
+	f.vr[0x7] = 22
+	f.vr[0x9] = 12
 	f.execDXYN()
 	e.Gfx[22+12*64] = 1
 	e.Gfx[23+12*64] = 1
@@ -455,8 +455,8 @@ func TestExecDXYN(t *testing.T) {
 	}
 
 	//draw the sprite again at 23,13 (pixel erased)
-	f.vr[7] = 23
-	f.vr[9] = 13
+	f.vr[0x7] = 23
+	f.vr[0x9] = 13
 	f.execDXYN()
 	e.Gfx[23+13*64] = 0
 	e.Gfx[24+13*64] = 1
@@ -475,17 +475,17 @@ func TestExecEX9E(t *testing.T) {
 	//if the key stored in vx is pressed, skip next instruction
 	f := NewChip8()
 	f.oc = 0xE39E
-	f.vr[3] = 5
+	f.vr[0x3] = 5
 	f.execEX9E()
 	e := NewChip8()
 	e.oc = 0xE39E
-	e.vr[3] = 5
+	e.vr[0x3] = 5
 	e.pc = 0x0202
 	checkEqual(t, e, f)
 
-	f.Key[5] = 1
+	f.Key[0x5] = 1
 	f.execEX9E()
-	e.Key[5] = 1
+	e.Key[0x5] = 1
 	e.pc = 0x0206
 	checkEqual(t, e, f)
 }
@@ -494,17 +494,17 @@ func TestExecEXA1(t *testing.T) {
 	//if the key stored in vx is not pressed, skip next instruction
 	f := NewChip8()
 	f.oc = 0xE2A1
-	f.vr[2] = 5
+	f.vr[0x2] = 5
 	f.execEXA1()
 	e := NewChip8()
 	e.oc = 0xE2A1
-	e.vr[2] = 5
+	e.vr[0x2] = 5
 	e.pc = 0x0204
 	checkEqual(t, e, f)
 
-	f.Key[5] = 1
+	f.Key[0x5] = 1
 	f.execEXA1()
-	e.Key[5] = 1
+	e.Key[0x5] = 1
 	e.pc = 0x0206
 	checkEqual(t, e, f)
 }
@@ -518,7 +518,7 @@ func TestExecFX07(t *testing.T) {
 	e := NewChip8()
 	e.oc = 0xF807
 	e.dt = 0xAB
-	e.vr[8] = 0xAB
+	e.vr[0x8] = 0xAB
 	e.pc = 0x0202
 	checkEqual(t, e, f)
 }
@@ -550,57 +550,120 @@ func TestExecFX15(t *testing.T) {
 	//delay_timer=vx
 	f := NewChip8()
 	f.oc = 0xF715
-	f.vr[7] = 0xA1
+	f.vr[0x7] = 0xA1
 	f.execFX15()
 	e := NewChip8()
 	e.oc = 0xF715
-	e.vr[7] = 0xA1
+	e.vr[0x7] = 0xA1
 	e.dt = 0xA1
 	e.pc = 0x0202
 	checkEqual(t, e, f)
 }
 
 func TestExecFX18(t *testing.T) {
-	//TODO
 	//sound_timer=vx
 	f := NewChip8()
 	f.oc = 0xF118
+	f.vr[0x1] = 0xD4
+	f.execFX18()
+	e := NewChip8()
+	e.oc = 0xF118
+	e.vr[0x1] = 0xD4
+	e.st = 0xD4
+	e.pc = 0x0202
+	checkEqual(t, e, f)
 }
 
 func TestExecFX1E(t *testing.T) {
-	//TODO
 	// i+=vx
 	f := NewChip8()
-	f.oc = 0xFF1E
+	f.oc = 0xFE1E
+	f.vr[0xE] = 0xA6
+	f.ir = 0x1111
+	f.execFX1E()
+	e := NewChip8()
+	e.oc = 0xFE1E
+	e.vr[0xE] = 0xA6
+	e.ir = 0x11B7
+	e.pc = 0x0202
+	checkEqual(t, e, f)
 }
 
 func TestExecFX29(t *testing.T) {
-	//TODO
 	//i=sprite_addr[vx] (point i at the font sprite for the value in vx)
 	f := NewChip8()
 	f.oc = 0xF329
+	f.vr[0x3] = 0xF
+	f.execFX29()
+	e := NewChip8()
+	e.oc = 0xF329
+	e.vr[0x3] = 0xF
+	e.ir = 0x004B //"F" sprite should be stored in Mem[0x4B]:Mem[0x4F]
+	e.pc = 0x0202
+	checkEqual(t, e, f)
 }
 
 func TestExecFX33(t *testing.T) {
-	//TODO
 	//set_bcd(vx);*(i+0)=bcd(3);*(i+1)=bcd(2);*(i+2)=bcd(1);
 	//store a decimal of vx in memory (e.g. if i=0 and vx=128, m0=1 m1=2 m2=8)
 	f := NewChip8()
 	f.oc = 0xF533
+	f.ir = 0x00A0
+	f.vr[0x5] = 128
+	f.execFX33()
+	e := NewChip8()
+	e.oc = 0xF533
+	e.ir = 0x00A0
+	e.vr[0x5] = 128
+	e.Mem[0x00A0] = 1
+	e.Mem[0x00A1] = 2
+	e.Mem[0x00A2] = 8
+	e.pc = 0x0202
+	checkEqual(t, e, f)
 }
 
 func TestExecFX55(t *testing.T) {
-	//TODO
 	//reg_dump(vx,&i) (store v0:vx inclusive from addr i, i is not modified)
 	f := NewChip8()
-	f.oc = 0xFC55
+	f.oc = 0xF255
+	f.ir = 0x0100
+	f.vr[0x0] = 0x42
+	f.vr[0x1] = 0xD4
+	f.vr[0x2] = 0xAB
+	f.execFX55()
+	e := NewChip8()
+	e.oc = 0xF255
+	e.ir = 0x0100
+	e.vr[0x0] = 0x42
+	e.vr[0x1] = 0xD4
+	e.vr[0x2] = 0xAB
+	e.Mem[0x0100] = 0x42
+	e.Mem[0x0101] = 0xD4
+	e.Mem[0x0102] = 0xAB
+	e.pc = 0x0202
+	checkEqual(t, e, f)
 }
 
 func TestExecFX65(t *testing.T) {
-	//TODO
 	//reg_load(vx,&i) (fill v0:vx inclusive from addr i, i is not modified)
 	f := NewChip8()
-	f.oc = 0xFF65
+	f.oc = 0xF265
+	f.ir = 0x0100
+	f.Mem[0x0100] = 0x42
+	f.Mem[0x0101] = 0xD4
+	f.Mem[0x0102] = 0xAB
+	f.execFX65()
+	e := NewChip8()
+	e.oc = 0xF265
+	e.ir = 0x0100
+	e.Mem[0x0100] = 0x42
+	e.Mem[0x0101] = 0xD4
+	e.Mem[0x0102] = 0xAB
+	e.vr[0x0] = 0x42
+	e.vr[0x1] = 0xD4
+	e.vr[0x2] = 0xAB
+	e.pc = 0x0202
+	checkEqual(t, e, f)
 }
 
 func checkEqual(t *testing.T, e *Chip8, f *Chip8) {
