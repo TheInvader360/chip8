@@ -239,17 +239,49 @@ func TestExec8XY4(t *testing.T) {
 }
 
 func TestExec8XY5(t *testing.T) {
-	//TODO
 	//vx-=vy (if vx>vy then vF=1)
 	f := NewChip8()
 	f.oc = 0x89A5
+	f.vr[0x9] = 0b00001111
+	f.vr[0xA] = 0b00000110
+	f.exec8XY5()
+	e := NewChip8()
+	e.oc = 0x89A5
+	e.vr[0x9] = 0b00001001
+	e.vr[0xA] = 0b00000110
+	e.vr[0xF] = 1
+	e.pc = 0x202
+	checkEqual(t, e, f)
+
+	f.vr[0x9] = 0b00000110
+	f.vr[0xA] = 0b00001111
+	f.exec8XY5()
+	e.vr[0x9] = 0b11110111 //i.e. 0b100000110-0b1111
+	e.vr[0xA] = 0b00001111
+	e.vr[0xF] = 0
+	e.pc = 0x204
+	checkEqual(t, e, f)
 }
 
 func TestExec8XY6(t *testing.T) {
-	//TODO
 	//vx>>=1 (vF=the lsb of vx, then vx is divided by 2)
 	f := NewChip8()
 	f.oc = 0x8206
+	f.vr[0x2] = 0b01010101
+	f.exec8XY6()
+	e := NewChip8()
+	e.oc = 0x8206
+	e.vr[0xF] = 1
+	e.vr[0x2] = 0b00101010
+	e.pc = 0x202
+	checkEqual(t, e, f)
+
+	f.vr[0x2] = 0b00111100
+	f.exec8XY6()
+	e.vr[0xF] = 0
+	e.vr[0x2] = 0b00011110
+	e.pc = 0x204
+	checkEqual(t, e, f)
 }
 
 func TestExec8XY7(t *testing.T) {
@@ -260,10 +292,24 @@ func TestExec8XY7(t *testing.T) {
 }
 
 func TestExec8XYE(t *testing.T) {
-	//TODO
 	//vx<<=1 (vF=the msb of vx, then vx is multiplied by 2)
 	f := NewChip8()
 	f.oc = 0x8EEE
+	f.vr[0xE] = 0b01010101
+	f.exec8XYE()
+	e := NewChip8()
+	e.oc = 0x8EEE
+	e.vr[0xF] = 0
+	e.vr[0xE] = 0b10101010
+	e.pc = 0x202
+	checkEqual(t, e, f)
+
+	f.vr[0xE] = 0b11000000
+	f.exec8XYE()
+	e.vr[0xF] = 1
+	e.vr[0xE] = 0b10000000
+	e.pc = 0x204
+	checkEqual(t, e, f)
 }
 
 func TestExec9XY0(t *testing.T) {

@@ -163,6 +163,7 @@ func (vm *Chip8) exec8XYE() {
 	//vx<<=1 (vF=the msb of vx, then vx is multiplied by 2)
 	x := vm.oc & 0x0F00 >> 8
 	vm.vr[0xF] = vm.vr[x] & 0b10000000
+	vm.vr[0xF] >>= 7
 	vm.vr[x] <<= 1
 	vm.pc += 2
 }
