@@ -2,3 +2,6 @@ language: go
 
 go:
   - 1.14.x
+
+before_install:
+  - sudo apt-get -y install libc6-dev libglu1-mesa-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev libasound2-dev pkg-config
