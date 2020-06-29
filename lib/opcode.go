@@ -266,11 +266,11 @@ func (vm *Chip8) execFX0A() {
 	x := vm.oc & 0x0F00 >> 8
 	for i, k := range vm.Key {
 		if k == 1 {
-			vm.vr[x] = byte(i)
+			vm.vr[x] = byte(i) //e.g. if R/0xD key is pressed, vr[x]=0xD
+			vm.pc += 2         //execution stopped until a key is pressed
 			break
 		}
 	}
-	vm.pc += 2
 }
 
 func (vm *Chip8) execFX15() {

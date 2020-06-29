@@ -1,14 +1,11 @@
-# CHIP-8
-
-[![Build Status](https://travis-ci.com/TheInvader360/chip8.svg?branch=master)](https://travis-ci.com/TheInvader360/chip8)
+# CHIP-8 [![Build Status](https://travis-ci.com/TheInvader360/chip8.svg?branch=master)](https://travis-ci.com/TheInvader360/chip8)
 
 [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) emulator written in [Go](https://golang.org/).
 
-### Local Setup
 
-[Download](https://golang.org/dl) and [install](https://golang.org/doc/install) Go.
+## Local Setup
 
-Install dependencies:
+[Download](https://golang.org/dl) and [install](https://golang.org/doc/install) Go, then install dependencies:
 
     sudo apt install libc6-dev libglu1-mesa-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev libasound2-dev pkg-config
 
@@ -24,7 +21,8 @@ Various public domain ROMs are included. Examples:
     go run main.go -path=./rom/PONG.ch8
     go run main.go -path=./rom/TETRIS.ch8
 
-### Input
+
+## Input
 
 Mapping CHIP-8 keys to a QWERTY keyboard:
 
@@ -36,7 +34,8 @@ Mapping CHIP-8 keys to a QWERTY keyboard:
 
 Additional controls:
 
-    P - Pause or unpause emulation loop
-    O - One iteration of the emulation loop (step through while paused)
-    I - Initialize (reset to a clean starting state)
+    P   - Pause or unpause emulation loop
+    O   - One iteration of the emulation loop (step through while paused)
+    I   - Initialize (reset to a clean starting state)
+    Esc - Exit
 

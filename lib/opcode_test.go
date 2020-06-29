@@ -271,24 +271,42 @@ func TestExec8XY6(t *testing.T) {
 	f.exec8XY6()
 	e := NewChip8()
 	e.oc = 0x8206
-	e.vr[0xF] = 1
 	e.vr[0x2] = 0b00101010
+	e.vr[0xF] = 1
 	e.pc = 0x202
 	checkEqual(t, e, f)
 
 	f.vr[0x2] = 0b00111100
 	f.exec8XY6()
-	e.vr[0xF] = 0
 	e.vr[0x2] = 0b00011110
+	e.vr[0xF] = 0
 	e.pc = 0x204
 	checkEqual(t, e, f)
 }
 
 func TestExec8XY7(t *testing.T) {
-	//TODO
 	//vx=vy-vx (if vy>vx then vF=1)
 	f := NewChip8()
 	f.oc = 0x8197
+	f.vr[0x1] = 0b01010101
+	f.vr[0x9] = 0b00011100
+	f.exec8XY7()
+	e := NewChip8()
+	e.oc = 0x8197
+	e.vr[0x1] = 0b11000111 //i.e. 0b100011100-0b1010101
+	e.vr[0x9] = 0b00011100
+	e.vr[0xF] = 0
+	e.pc = 0x202
+	checkEqual(t, e, f)
+
+	f.vr[0x1] = 0b00011100
+	f.vr[0x9] = 0b01010101
+	f.exec8XY7()
+	e.vr[0x1] = 0b00111001 //i.e. 0b01010101-0b00011100
+	e.vr[0x9] = 0b01010101
+	e.vr[0xF] = 1
+	e.pc = 0x204
+	checkEqual(t, e, f)
 }
 
 func TestExec8XYE(t *testing.T) {
@@ -299,15 +317,15 @@ func TestExec8XYE(t *testing.T) {
 	f.exec8XYE()
 	e := NewChip8()
 	e.oc = 0x8EEE
-	e.vr[0xF] = 0
 	e.vr[0xE] = 0b10101010
+	e.vr[0xF] = 0
 	e.pc = 0x202
 	checkEqual(t, e, f)
 
 	f.vr[0xE] = 0b11000000
 	f.exec8XYE()
-	e.vr[0xF] = 1
 	e.vr[0xE] = 0b10000000
+	e.vr[0xF] = 1
 	e.pc = 0x204
 	checkEqual(t, e, f)
 }
@@ -346,10 +364,16 @@ func TestExecANNN(t *testing.T) {
 }
 
 func TestExecBNNN(t *testing.T) {
-	//TODO
 	//pc=v0+nnn
 	f := NewChip8()
 	f.oc = 0xBAF2
+	f.vr[0x0] = 0x23
+	f.execBNNN()
+	e := NewChip8()
+	e.oc = 0xBAF2
+	e.vr[0x0] = 0x23
+	e.pc = 0x0B15 //i.e. 0x23 + 0x0AF2
+	checkEqual(t, e, f)
 }
 
 func TestExecCXNN(t *testing.T) {
@@ -500,10 +524,26 @@ func TestExecFX07(t *testing.T) {
 }
 
 func TestExecFX0A(t *testing.T) {
-	//TODO
 	//vx=get_key() (wait for a key press then store the key value in vx)
 	f := NewChip8()
 	f.oc = 0xFC0A
+	f.execFX0A()
+	e := NewChip8()
+	e.oc = 0xFC0A
+	checkEqual(t, e, f)
+
+	f.execFX0A()
+	checkEqual(t, e, f)
+
+	f.execFX0A()
+	checkEqual(t, e, f)
+
+	f.Key[0xD] = 1
+	f.execFX0A()
+	e.Key[0xD] = 1
+	e.vr[0xC] = 0xD
+	e.pc = 0x0202
+	checkEqual(t, e, f)
 }
 
 func TestExecFX15(t *testing.T) {
