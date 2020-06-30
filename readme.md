@@ -17,10 +17,12 @@ Clone and run:
 
 Various public domain ROMs are included. Examples:
 
-    go run main.go -path=./rom/15PUZZLE.ch8
-    go run main.go -path=./rom/PONG.ch8
-    go run main.go -path=./rom/TETRIS.ch8
+    go run main.go -path=./rom/BLINKY.ch8 -clock=700
+    go run main.go -path=./rom/BRIX.ch8
+    go run main.go -path=./rom/CAVE.ch8 -clock=300
+    go run main.go -path=./rom/PONG.ch8 -clock=500
 
+The CPU clock defaults to 400Hz. Set the optional -clock argument to override.
 
 ## Input
 

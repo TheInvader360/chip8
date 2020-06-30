@@ -18,11 +18,11 @@ import (
 )
 
 const (
-	ScrF = false //client fullscreen
-	ScrW = 960   //client screen width in pixels
-	ScrH = 480   //client screen height in pixels
+	ScrF = false //fullscreen
+	ScrW = 960   //screen width in pixels
+	ScrH = 480   //screen height in pixels
 
-	tps  = 60                       //client max ticks per second
+	tps  = 60                       //max ticks per second
 	pixW = float64(ScrW / lib.GfxW) //pixel width scale factor
 	pixH = float64(ScrH / lib.GfxH) //pixel height scale factor
 )
@@ -36,10 +36,12 @@ var (
 		ebiten.KeyA: 0x7, ebiten.KeyS: 0x8, ebiten.KeyD: 0x9, ebiten.KeyF: 0xE,
 		ebiten.KeyZ: 0xA, ebiten.KeyX: 0x0, ebiten.KeyC: 0xB, ebiten.KeyV: 0xF,
 	}
-	path   *string
-	rom    = false
-	paused = false
-	view   *ebiten.Image
+	clock   *int          //cpu clock speed in hz
+	counter float64       //cpu counter
+	path    *string       //path to rom file
+	rom     = false       //is rom loaded into memory
+	paused  = false       //is emulation loop paused
+	view    *ebiten.Image //screen buffer
 )
 
 type Game struct {
@@ -68,10 +70,15 @@ func (g *Game) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyP) {
 		paused = !paused
 	}
-	if !paused || inpututil.IsKeyJustPressed(ebiten.KeyO) {
-		g.vm.EmulateCycle()
-		fmt.Println(g.vm.DebugInfo())
-		updateKeys(g.vm)
+	if paused && inpututil.IsKeyJustPressed(ebiten.KeyO) {
+		step(g.vm)
+	}
+	if !paused {
+		for counter > 0 {
+			step(g.vm)
+			counter -= tps
+		}
+		counter += float64(*clock)
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyI) {
 		g.vm = lib.NewChip8()
@@ -97,7 +104,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	//draw to screen (ebiten clears the screen each frame)
 	op := &ebiten.DrawImageOptions{}
 	screen.DrawImage(view, op)
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("%0.2f", ebiten.CurrentTPS()))
+	//ebitenutil.DebugPrint(screen, fmt.Sprintf("%0.2f", ebiten.CurrentTPS()))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -107,7 +114,9 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func loadRom(vm *lib.Chip8) {
 	if path == nil {
 		path = flag.String("path", "./rom/test/ti360.ch8", "path to rom file")
+		clock = flag.Int("clock", 400, "cpu clock speed in hz (100-1000)")
 		flag.Parse()
+		*clock = lib.Clamp(*clock, 100, 1000)
 	}
 
 	file, err := os.Open(*path)
@@ -126,6 +135,12 @@ func loadRom(vm *lib.Chip8) {
 	fmt.Println(vm.Mem)
 
 	rom = true
+}
+
+func step(vm *lib.Chip8) {
+	vm.EmulateCycle()
+	fmt.Println(vm.DebugInfo())
+	updateKeys(vm)
 }
 
 func updateKeys(vm *lib.Chip8) {
