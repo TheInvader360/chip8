@@ -15,14 +15,24 @@ Clone and run:
     cd chip8
     go test ./... && go run main.go -path=./rom/test/ti360.ch8
 
-Various public domain ROMs are included. Examples:
+Command line options:
 
-    go run main.go -path=./rom/BLINKY.ch8 -clock=700
+    -path string : path to rom file (default "./rom/test/ti360.ch8")
+    -clock int   : cpu clock speed in hz (100-1000) (default 400)
+    -debug       : enable debug info in terminal
+    -fullscreen  : enable fullscreen mode
+    -height int  : height of client screen in pixels (default 320)
+    -width int   : width of client screen in pixels (default 640)
+
+Example launch commands:
+
+    go run main.go
     go run main.go -path=./rom/BRIX.ch8
-    go run main.go -path=./rom/CAVE.ch8 -clock=300
-    go run main.go -path=./rom/PONG.ch8 -clock=500
-
-The CPU clock defaults to 400Hz. Set the optional -clock argument to override.
+    go run main.go -path=./rom/BLINKY.ch8 -clock=1000
+    go run main.go -path=./rom/CAVE.ch8 -clock=300 -debug
+    go run main.go -path=./rom/PONG.ch8 -clock=500 -fullscreen
+    go run main.go -path=./rom/UFO.ch8 -width=1280 -height=640
+    go run main.go -path=./rom/WALL.ch8 -clock=300 -debug -width=640 -height=480
 
 ## Input
 

@@ -1,7 +1,6 @@
 package client
 
 import (
-	"flag"
 	"fmt"
 	"image/color"
 	"io/ioutil"
@@ -18,13 +17,7 @@ import (
 )
 
 const (
-	ScrF = false //fullscreen
-	ScrW = 960   //screen width in pixels
-	ScrH = 480   //screen height in pixels
-
-	tps  = 60                       //max ticks per second
-	pixW = float64(ScrW / lib.GfxW) //pixel width scale factor
-	pixH = float64(ScrH / lib.GfxH) //pixel height scale factor
+	tps = 60 //max ticks per second
 )
 
 var (
@@ -36,33 +29,33 @@ var (
 		ebiten.KeyA: 0x7, ebiten.KeyS: 0x8, ebiten.KeyD: 0x9, ebiten.KeyF: 0xE,
 		ebiten.KeyZ: 0xA, ebiten.KeyX: 0x0, ebiten.KeyC: 0xB, ebiten.KeyV: 0xF,
 	}
-	clock   *int          //cpu clock speed in hz
 	counter float64       //cpu counter
-	path    *string       //path to rom file
 	rom     = false       //is rom loaded into memory
 	paused  = false       //is emulation loop paused
 	view    *ebiten.Image //screen buffer
 )
 
 type Game struct {
-	vm *lib.Chip8
+	opts *Opts
+	vm   *lib.Chip8
 }
 
 func init() {
 	ebiten.SetMaxTPS(tps)
 	rand.Seed(time.Now().UnixNano())
-	view, _ = ebiten.NewImage(ScrW, ScrH, ebiten.FilterDefault)
+	view, _ = ebiten.NewImage(lib.GfxW, lib.GfxH, ebiten.FilterDefault)
 }
 
-func NewGame() *Game {
+func NewGame(opts *Opts) *Game {
 	return &Game{
-		vm: lib.NewChip8(),
+		opts: opts,
+		vm:   lib.NewChip8(),
 	}
 }
 
 func (g *Game) Update(screen *ebiten.Image) error {
 	if !rom {
-		loadRom(g.vm)
+		loadRom(g)
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
 		os.Exit(0)
@@ -71,14 +64,14 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		paused = !paused
 	}
 	if paused && inpututil.IsKeyJustPressed(ebiten.KeyO) {
-		step(g.vm)
+		step(g)
 	}
 	if !paused {
 		for counter > 0 {
-			step(g.vm)
+			step(g)
 			counter -= tps
 		}
-		counter += float64(*clock)
+		counter += float64(g.opts.Clock)
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyI) {
 		g.vm = lib.NewChip8()
@@ -95,7 +88,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			for x := 0; x < lib.GfxW; x++ {
 				if g.vm.Gfx[y*lib.GfxW+x] == 1 {
 					ebitenutil.DrawRect(view,
-						float64(x)*pixW, float64(y)*pixH, pixW, pixH, fg)
+						float64(x), float64(y), 1, 1, fg)
 				}
 			}
 		}
@@ -108,18 +101,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return ScrW, ScrH
+	return lib.GfxW, lib.GfxH
 }
 
-func loadRom(vm *lib.Chip8) {
-	if path == nil {
-		path = flag.String("path", "./rom/test/ti360.ch8", "path to rom file")
-		clock = flag.Int("clock", 400, "cpu clock speed in hz (100-1000)")
-		flag.Parse()
-		*clock = lib.Clamp(*clock, 100, 1000)
-	}
-
-	file, err := os.Open(*path)
+func loadRom(g *Game) {
+	file, err := os.Open(g.opts.Path)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -130,17 +116,21 @@ func loadRom(vm *lib.Chip8) {
 	}
 
 	for i := 0; i < len(bytes); i++ {
-		vm.Mem[i+0x200] = bytes[i]
+		g.vm.Mem[i+0x200] = bytes[i]
 	}
-	fmt.Println(vm.Mem)
+	if g.opts.Debug {
+		fmt.Println(g.vm.Mem)
+	}
 
 	rom = true
 }
 
-func step(vm *lib.Chip8) {
-	vm.EmulateCycle()
-	fmt.Println(vm.DebugInfo())
-	updateKeys(vm)
+func step(g *Game) {
+	g.vm.EmulateCycle()
+	if g.opts.Debug {
+		fmt.Println(g.vm.DebugInfo())
+	}
+	updateKeys(g.vm)
 }
 
 func updateKeys(vm *lib.Chip8) {
