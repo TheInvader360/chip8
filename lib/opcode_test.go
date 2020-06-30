@@ -569,7 +569,7 @@ func TestExecFX18(t *testing.T) {
 	e := NewChip8()
 	e.oc = 0xF118
 	e.vr[0x1] = 0xD4
-	e.st = 0xD4
+	e.St = 0xD4
 	e.pc = 0x0202
 	checkEqual(t, e, f)
 }

@@ -283,7 +283,7 @@ func (vm *Chip8) execFX15() {
 func (vm *Chip8) execFX18() {
 	//sound_timer=vx
 	x := vm.oc & 0x0F00 >> 8
-	vm.st = vm.vr[x]
+	vm.St = vm.vr[x]
 	vm.pc += 2
 }
 

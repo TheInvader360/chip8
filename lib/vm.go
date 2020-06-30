@@ -43,7 +43,7 @@ type Chip8 struct {
 	sp  uint16     //stack pointer to remember the level of stack used
 	Key [16]byte   //stores the current state of the hex keypad (0-F)
 	dt  byte       //delay timer counts down to zero at 60hz
-	st  byte       //sound timer counts down to zero at 60hz
+	St  byte       //sound timer counts down to zero at 60hz
 	Rg  bool       //redraw gfx - set by 0x00E0 (cls) and 0xDXYN (sprite)
 }
 
@@ -52,6 +52,7 @@ type opcodeExecutor func()
 func NewChip8() *Chip8 {
 	vm := Chip8{
 		pc: 0x0200,
+		St: 15,
 		Rg: true,
 	}
 	//load font data into first 80 bytes of memory (to be referenced by FX29)
@@ -85,7 +86,7 @@ func (vm *Chip8) DebugInfo() string {
 	for i := 0; i < len(vm.Key); i++ {
 		b.WriteString(fmt.Sprintf("%d", vm.Key[i]))
 	}
-	b.WriteString(fmt.Sprintf(" dt:%02X st:%02X rg:%t", vm.dt, vm.st, vm.Rg))
+	b.WriteString(fmt.Sprintf(" dt:%02X st:%02X rg:%t", vm.dt, vm.St, vm.Rg))
 	return b.String()
 }
 
@@ -93,7 +94,6 @@ func (vm *Chip8) EmulateCycle() {
 	vm.oc = vm.fetchOpcode()
 	d := vm.decodeOpcode()
 	opcodeExecutors[d]()
-	vm.updateTimers()
 }
 
 func (vm *Chip8) fetchOpcode() uint16 {
@@ -183,12 +183,12 @@ func (vm *Chip8) decodeOpcode() uint16 {
 	return d
 }
 
-func (vm *Chip8) updateTimers() {
+func (vm *Chip8) UpdateTimers() {
 	//Count down to zero
 	if vm.dt > 0 {
 		vm.dt--
 	}
-	if vm.st > 0 {
-		vm.st--
+	if vm.St > 0 {
+		vm.St--
 	}
 }

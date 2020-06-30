@@ -90,22 +90,22 @@ func TestDecodeOpcode(t *testing.T) {
 func TestUpdateTimers(t *testing.T) {
 	vm := NewChip8()
 	vm.dt = 2
-	vm.st = 1
-	vm.updateTimers()
+	vm.St = 1
+	vm.UpdateTimers()
 	if vm.dt != 1 {
 		t.Errorf("Expected %X, found %X.", 1, vm.dt)
 	}
-	if vm.st != 0 {
-		t.Errorf("Expected %X, found %X.", 0, vm.st)
+	if vm.St != 0 {
+		t.Errorf("Expected %X, found %X.", 0, vm.St)
 	}
-	vm.updateTimers()
+	vm.UpdateTimers()
 	if vm.dt != 0 {
 		t.Errorf("Expected %X, found %X.", 0, vm.dt)
 	}
-	if vm.st != 0 {
-		t.Errorf("Expected %X, found %X.", 0, vm.st)
+	if vm.St != 0 {
+		t.Errorf("Expected %X, found %X.", 0, vm.St)
 	}
-	vm.updateTimers()
+	vm.UpdateTimers()
 	if vm.dt != 0 {
 		t.Errorf("Expected %X, found %X.", 0, vm.dt)
 	}

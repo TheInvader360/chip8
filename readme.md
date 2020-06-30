@@ -1,6 +1,6 @@
 # CHIP-8 [![Build Status](https://travis-ci.com/TheInvader360/chip8.svg?branch=master)](https://travis-ci.com/TheInvader360/chip8)
 
-[CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) emulator written in [Go](https://golang.org/).
+:video_game: [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) emulator written in [Go](https://golang.org/).
 
 
 ## Local Setup

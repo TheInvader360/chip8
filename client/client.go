@@ -77,6 +77,9 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		g.vm = lib.NewChip8()
 		rom = false
 	}
+	g.vm.UpdateTimers()
+	//play sound (dependent on sound timer)
+	Noise(g.vm.St > 0)
 	return nil
 }
 
@@ -87,8 +90,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		for y := 0; y < lib.GfxH; y++ {
 			for x := 0; x < lib.GfxW; x++ {
 				if g.vm.Gfx[y*lib.GfxW+x] == 1 {
-					ebitenutil.DrawRect(view,
-						float64(x), float64(y), 1, 1, fg)
+					ebitenutil.DrawRect(view, float64(x), float64(y), 1, 1, fg)
 				}
 			}
 		}
@@ -97,7 +99,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	//draw to screen (ebiten clears the screen each frame)
 	op := &ebiten.DrawImageOptions{}
 	screen.DrawImage(view, op)
-	//ebitenutil.DebugPrint(screen, fmt.Sprintf("%0.2f", ebiten.CurrentTPS()))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
