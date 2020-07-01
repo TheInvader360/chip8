@@ -1,0 +1,139 @@
+15PUZZLE
+Move all the items and put them in increasing order, starting at the upper-left
+corner. Move the item you want by pressing the associated key (e.g. to move
+item 3, press 3).
+
+AIRPLANE
+Drop packets from your airplane (key 8) so they hit the ground without
+colliding with other planes.
+
+BLINKY
+Pacman clone. Eat all the balls in the maze. Avoid the enemies. 3/6/7/8 to move
+u/d/l/r, and F to restart.
+
+BLITZ
+Bomber clone. You are in a plane and must destroy the towers of a town. Your
+plane flies from left to right, and is descending. Key 5 drops bombs. The game
+ends if you crash into a tower.
+
+BREAKOUT
+Same as BRIX, but with Atari 2600 style graphics. 4/6 to move l/r.
+
+BRIX
+Arkanoid clone. You have 5 lives, and your goal is the destruction of all the
+brix. 4/6 to move l/r.
+
+CAVE
+Move through the cave without hitting the walls. 3/6/7/8 to move u/d/l/r, and F
+to restart.
+
+CONNECT4
+This game is for two players. The goal is to align 4 coins in the game area.
+Each player's coins are colored. When you drop a coin it is placed on top of
+any coins in that column. Once a column is full, you cannot place any more
+coins in it. 4/6 to select a column, 5 to drop a coin. There is no winner
+detection.
+
+FIGURES
+Tetris with numbers. 4/6 to move l/r.
+
+FILTER
+Catch everything that falls. 4/6 to move l/r.
+
+GUESS
+Think of a number between 1 and 63. Several boards will be shown - press 5 if
+your number is on the current board, any other key if not. You will eventually
+be presented with the number you picked.
+
+HIDDEN
+Memory matching game. 2/8/4/6 to move u/d/l/r, 5 to pick.
+
+INVADERS
+Space Invaders clone. 4/6 to move, 5 to shoot. Press 5 to begin a game.
+
+KALEID
+Kaleidoscope demo. 2/8/4/6 to move u/d/l/r, 0 to repeat.
+
+LANDING
+Try to flatten the field for landing. Press 8 to drop a bomb.
+
+MAZE
+Maze demo. Draws random mazes.
+
+MERLIN
+Simon clone. Remember the order in which the squares are lit, then copy the
+sequence using keys 4/5/7/8 for top-left/top-right/bottom-left/bottom-right.
+
+MISSILE
+Shoot the targets. You have 12 missiles in total, and move a little faster
+after each shot. Press 8 to shoot.
+
+PADDLES
+Press F to start 1 player game, or E to start a 2 player game. 4/6 and 7/9
+to move each paddle l/r.
+
+PONG
+2 player pong. 1/4 and C/D to move each paddle u/d.
+
+PONG1P
+1 player pong. 1/4 to move u/d.
+
+PONG2
+2 player pong. 1/4 and C/D to move each paddle u/d.
+
+PUZZLE
+A version of PUZZLE15 with improved controls. 8/2/4/6 to move tiles u/d/l/r.
+
+ROCKET
+Avoid crashing into the tunnel walls. 4/6 to move l/r, press B to start.
+
+SOCCER
+2 player pong-like game. 1/4 and C/D to move each pair of paddles u/d.
+
+SPACEF
+Fly through the screen 4 times to win the level. 1/4 to move u/d, E/F to start.
+	  
+SQUASH
+Same as WALL, but 5 lives and game over when lost. 1/4 to move u/d.
+
+SYZYGY
+Snake clone. 3/6/7/8 to move u/d/l/r. F/E to start with/without borders.
+
+TANK
+Your goal is to hit the enemy while avoiding collisions. You start out with 25
+shells and the game ends when you have none left. You lose 5 shells if you
+collide with the enemy. 2/8/4/6 to move u/d/l/r, 5 to shoot.
+
+TAPEWORM
+Snake clone. 2/8/4/6 to move u/d/l/r. F to start.
+
+TETRIS
+Tetris clone. 5/6 to move l/r, 4 to rotate, 7 to drop.
+
+TICTAC
+2 player tic-tac-toe game. Keys 1-9 correspond to a square in the grid. The
+game never ends, so at any time the winner is the one who has the best score.
+
+TRON
+2 player tron clone. Press B/F to play with/without borders. 0 starts a round.
+P1: 1/4/3/C to move u/d/l/r. P2: 7/A/9/E to move u/d/l/r.
+
+UFO
+Shoot the UFOs. The bigger one moves at a constant speed and is worth 5 points.
+The smaller one moves at varying speeds and is worth 15 points. Press 4/5/6 to
+shoot left/up/right. The game ends when you've shot all 15 of your missiles.
+
+VBRIX
+Similar to BRIX, but with vertical bricks. 1/4 to move u/d, 7 to start.
+
+VERS
+2 player tron clone. P1: 7/A/1/2 to move u/d/l/r. P1: C/D/B/F to move u/d/l/r.
+
+WALL
+Catch the ball - aim for a high streak. 1/4 to move u/d.
+
+WIPEOFF
+Similar to BRIX but with tiny bricks. 4/6 to move l/r.
+
+X-MIRROR
+Draw symmetric patterns. 2/8/4/6 to move u/d/l/r.

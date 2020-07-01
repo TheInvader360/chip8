@@ -27,12 +27,12 @@ Command line options:
 Example launch commands:
 
     go run main.go
-    go run main.go -path=./rom/BRIX.ch8
-    go run main.go -path=./rom/BLINKY.ch8 -clock=1000
-    go run main.go -path=./rom/CAVE.ch8 -clock=300 -debug
-    go run main.go -path=./rom/PONG.ch8 -clock=500 -fullscreen
-    go run main.go -path=./rom/UFO.ch8 -width=1280 -height=640
-    go run main.go -path=./rom/WALL.ch8 -clock=300 -debug -width=640 -height=480
+    go run main.go -path=./rom/chip8/BRIX.ch8
+    go run main.go -path=./rom/chip8/BLINKY.ch8 -clock=1000
+    go run main.go -path=./rom/chip8/CAVE.ch8 -clock=300 -debug
+    go run main.go -path=./rom/chip8/PONG.ch8 -clock=500 -fullscreen
+    go run main.go -path=./rom/chip8/UFO.ch8 -width=1280 -height=640
+    go run main.go -path=./rom/chip8/WALL.ch8 -clock=300 -debug -width=640 -height=480
 
 ## Input
 
@@ -50,4 +50,3 @@ Additional controls:
     O   - One iteration of the emulation loop (step through while paused)
     I   - Initialize (reset to a clean starting state)
     Esc - Exit
-
