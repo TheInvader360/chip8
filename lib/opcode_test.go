@@ -5,6 +5,10 @@ import (
 	"testing"
 )
 
+func TestExec00CN(t *testing.T) {
+	//TODO
+}
+
 func TestExec00E0(t *testing.T) {
 	//clear gfx
 	f := NewChip8()
@@ -33,6 +37,26 @@ func TestExec00EE(t *testing.T) {
 	e.sp = 0
 	e.pc = 0x1236
 	checkEqual(t, e, f)
+}
+
+func TestExec00FB(t *testing.T) {
+	//TODO
+}
+
+func TestExec00FC(t *testing.T) {
+	//TODO
+}
+
+func TestExec00FD(t *testing.T) {
+	//TODO
+}
+
+func TestExec00FE(t *testing.T) {
+	//TODO
+}
+
+func TestExec00FF(t *testing.T) {
+	//TODO
 }
 
 func TestExec0NNN(t *testing.T) {
@@ -603,6 +627,10 @@ func TestExecFX29(t *testing.T) {
 	checkEqual(t, e, f)
 }
 
+func TestExecFX30(t *testing.T) {
+	//TODO
+}
+
 func TestExecFX33(t *testing.T) {
 	//set_bcd(vx);*(i+0)=bcd(3);*(i+1)=bcd(2);*(i+2)=bcd(1);
 	//store a decimal of vx in memory (e.g. if i=0 and vx=128, m0=1 m1=2 m2=8)
@@ -664,6 +692,14 @@ func TestExecFX65(t *testing.T) {
 	e.vr[0x2] = 0xAB
 	e.pc = 0x0202
 	checkEqual(t, e, f)
+}
+
+func TestExecFX75(t *testing.T) {
+	//TODO
+}
+
+func TestExecFX85(t *testing.T) {
+	//TODO
 }
 
 func checkEqual(t *testing.T, e *Chip8, f *Chip8) {
