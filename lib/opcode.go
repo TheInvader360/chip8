@@ -4,6 +4,11 @@ import (
 	"math/rand"
 )
 
+func (vm *Chip8) exec00CN() {
+	//TODO
+	vm.pc += 2
+}
+
 func (vm *Chip8) exec00E0() {
 	//clear gfx
 	for i := range vm.Gfx {
@@ -17,6 +22,31 @@ func (vm *Chip8) exec00EE() {
 	//return (set pc from stack, decrement sp)
 	vm.pc = vm.stk[vm.sp] + 2
 	vm.sp--
+}
+
+func (vm *Chip8) exec00FB() {
+	//TODO
+	vm.pc += 2
+}
+
+func (vm *Chip8) exec00FC() {
+	//TODO
+	vm.pc += 2
+}
+
+func (vm *Chip8) exec00FD() {
+	//TODO
+	vm.pc += 2
+}
+
+func (vm *Chip8) exec00FE() {
+	//TODO
+	vm.pc += 2
+}
+
+func (vm *Chip8) exec00FF() {
+	//TODO
+	vm.pc += 2
 }
 
 func (vm *Chip8) exec0NNN() {
@@ -199,6 +229,8 @@ func (vm *Chip8) execCXNN() {
 }
 
 func (vm *Chip8) execDXYN() {
+	//TODO - SCHIP SUPPORT
+
 	//draw(vx,vy,n)
 	/*
 		Read n bytes (data) from memory, starting at i.
@@ -301,6 +333,11 @@ func (vm *Chip8) execFX29() {
 	vm.pc += 2
 }
 
+func (vm *Chip8) execFX30() {
+	//TODO
+	vm.pc += 2
+}
+
 func (vm *Chip8) execFX33() {
 	//set_bcd(vx);*(i+0)=bcd(3);*(i+1)=bcd(2);*(i+2)=bcd(1);
 	//store a decimal of vx in memory (e.g. if i=0 and vx=128, m0=1 m1=2 m2=8)
@@ -326,5 +363,15 @@ func (vm *Chip8) execFX65() {
 	for i := uint16(0); i <= x; i++ {
 		vm.vr[i] = vm.Mem[vm.ir+i]
 	}
+	vm.pc += 2
+}
+
+func (vm *Chip8) execFX75() {
+	//TODO
+	vm.pc += 2
+}
+
+func (vm *Chip8) execFX85() {
+	//TODO
 	vm.pc += 2
 }

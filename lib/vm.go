@@ -60,7 +60,9 @@ func NewChip8() *Chip8 {
 		vm.Mem[i] = fontset[i]
 	}
 	opcodeExecutors = map[uint16]opcodeExecutor{
-		0x0000: vm.exec0NNN, 0x00E0: vm.exec00E0, 0x00EE: vm.exec00EE,
+		0x0000: vm.exec0NNN, 0x00C0: vm.exec00CN, 0x00E0: vm.exec00E0,
+		0x00EE: vm.exec00EE, 0x00FB: vm.exec00FB, 0x00FC: vm.exec00FC,
+		0x00FD: vm.exec00FD, 0x00FE: vm.exec00FE, 0x00FF: vm.exec00FF,
 		0x1000: vm.exec1NNN, 0x2000: vm.exec2NNN, 0x3000: vm.exec3XNN,
 		0x4000: vm.exec4XNN, 0x5000: vm.exec5XY0, 0x6000: vm.exec6XNN,
 		0x7000: vm.exec7XNN, 0x8000: vm.exec8XY0, 0x8001: vm.exec8XY1,
@@ -70,8 +72,9 @@ func NewChip8() *Chip8 {
 		0xB000: vm.execBNNN, 0xC000: vm.execCXNN, 0xD000: vm.execDXYN,
 		0xE09E: vm.execEX9E, 0xE0A1: vm.execEXA1, 0xF007: vm.execFX07,
 		0xF00A: vm.execFX0A, 0xF015: vm.execFX15, 0xF018: vm.execFX18,
-		0xF01E: vm.execFX1E, 0xF029: vm.execFX29, 0xF033: vm.execFX33,
-		0xF055: vm.execFX55, 0xF065: vm.execFX65,
+		0xF01E: vm.execFX1E, 0xF029: vm.execFX29, 0xF030: vm.execFX30,
+		0xF033: vm.execFX33, 0xF055: vm.execFX55, 0xF065: vm.execFX65,
+		0xF075: vm.execFX75, 0xF085: vm.execFX85,
 	}
 	return &vm
 }
@@ -121,11 +124,25 @@ func (vm *Chip8) decodeOpcode() uint16 {
 	*/
 	d := vm.oc & 0xF000
 	if d == 0x0000 {
-		switch vm.oc & 0x00FF {
-		case 0x00E0:
-			d = 0x00E0
-		case 0x00EE:
-			d = 0x00EE
+		if vm.oc&0x00F0 == 0x00C0 {
+			d = 0x00C0
+		} else {
+			switch vm.oc & 0x00FF {
+			case 0x00E0:
+				d = 0x00E0
+			case 0x00EE:
+				d = 0x00EE
+			case 0x00FB:
+				d = 0x00FB
+			case 0x00FC:
+				d = 0x00FC
+			case 0x00FD:
+				d = 0x00FD
+			case 0x00FE:
+				d = 0x00FE
+			case 0x00FF:
+				d = 0x00FF
+			}
 		}
 	}
 	if d == 0x8000 {
@@ -172,12 +189,18 @@ func (vm *Chip8) decodeOpcode() uint16 {
 			d = 0xF01E
 		case 0x0029:
 			d = 0xF029
+		case 0x0030:
+			d = 0xF030
 		case 0x0033:
 			d = 0xF033
 		case 0x0055:
 			d = 0xF055
 		case 0x0065:
 			d = 0xF065
+		case 0x0075:
+			d = 0xF075
+		case 0x0085:
+			d = 0xF085
 		}
 	}
 	return d
