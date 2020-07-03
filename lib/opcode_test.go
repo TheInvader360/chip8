@@ -35,15 +35,15 @@ func TestExec00E0(t *testing.T) {
 }
 
 func TestExec00EE(t *testing.T) {
-	//return (set pc from stack, decrement sp)
+	//return (decrement sp, set pc from stack)
 	f := NewChip8()
 	f.oc = 0x00EE
-	f.stk[0x1] = 0x1234
+	f.stk[0x0] = 0x1234
 	f.sp = 1
 	f.exec00EE()
 	e := NewChip8()
 	e.oc = 0x00EE
-	e.stk[0x1] = 0x1234
+	e.stk[0x0] = 0x1234
 	e.sp = 0
 	e.pc = 0x1236
 	checkEqual(t, e, f)
@@ -97,14 +97,14 @@ func TestExec1NNN(t *testing.T) {
 }
 
 func TestExec2NNN(t *testing.T) {
-	//call subroutine (increment sp, put current pc on stack, set pc to nnn)
+	//call subroutine (put current pc on stack, increment sp, set pc to nnn)
 	f := NewChip8()
 	f.oc = 0x2F08
 	f.exec2NNN()
 	e := NewChip8()
 	e.oc = 0x2F08
+	e.stk[0x0] = 0x0200
 	e.sp = 0x0001
-	e.stk[0x1] = 0x0200
 	e.pc = 0x0F08
 	checkEqual(t, e, f)
 }

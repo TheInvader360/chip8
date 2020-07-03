@@ -23,9 +23,9 @@ func (vm *Chip8) exec00E0() {
 }
 
 func (vm *Chip8) exec00EE() {
-	//return (set pc from stack, decrement sp)
-	vm.pc = vm.stk[vm.sp] + 2
+	//return (decrement sp, set pc from stack)
 	vm.sp--
+	vm.pc = vm.stk[vm.sp] + 2
 }
 
 func (vm *Chip8) exec00FB() {
@@ -61,10 +61,10 @@ func (vm *Chip8) exec1NNN() {
 }
 
 func (vm *Chip8) exec2NNN() {
-	//call subroutine (increment sp, put current pc on stack, set pc to nnn)
+	//call subroutine (put current pc on stack, increment sp, set pc to nnn)
 	nnn := vm.oc & 0x0FFF
-	vm.sp++
 	vm.stk[vm.sp] = vm.pc
+	vm.sp++
 	vm.pc = nnn
 }
 
@@ -236,7 +236,7 @@ func (vm *Chip8) execDXYN() {
 }
 
 func (vm *Chip8) execDXYNLR() {
-	//draw(x,y,n) - draw n byte sprite from mem[i] at vx,xy (vf=collision)
+	//draw(vx,vy,n) - draw n byte sprite from mem[i] at vx,xy (vf=collision)
 	/*
 		Read n bytes (data) from memory, starting at i.
 		Display bytes (data) as sprites on screen at coordinates vx,vy.
@@ -277,7 +277,7 @@ func (vm *Chip8) execDXYNLR() {
 }
 
 func (vm *Chip8) execDXYNHR() {
-	//TODO - draw(x,y) - draw 16x16 sprite from mem[i] at vx,xy (vf=collision)
+	//TODO - draw(vx,vy) - draw 16x16 sprite from mem[i] at vx,xy (vf=collision)
 	vm.pc += 2
 }
 
