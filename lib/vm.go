@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	GfxW = 64 //gfx width
-	GfxH = 32 //gfx height
+	GfxW = 128      //gfx width
+	GfxH = 64       //gfx height
+	GfxS = 128 * 64 //gfx size
 )
 
 var (
@@ -33,18 +34,19 @@ var (
 )
 
 type Chip8 struct {
-	Mem [4096]byte //system memory (4kb total. 0x200-0xFFF: rom and ram)
-	Gfx [2048]byte //vF is set upon pixel collision in draw instruction
-	pc  uint16     //program counter
-	oc  uint16     //current opcode (each opcode is two bytes long)
-	vr  [16]byte   //v registers (v0-vE: general purpose. vF: carry flag)
-	ir  uint16     //index register
-	stk [16]uint16 //store program counter in stack before jump/gosub
-	sp  uint16     //stack pointer to remember the level of stack used
-	Key [16]byte   //stores the current state of the hex keypad (0-F)
-	dt  byte       //delay timer counts down to zero at 60hz
-	St  byte       //sound timer counts down to zero at 60hz
-	Rg  bool       //redraw gfx - set by 0x00E0 (cls) and 0xDXYN (sprite)
+	Mem  [4096]byte //system memory (4kb total. 0x200-0xFFF: rom and ram)
+	Gfx  [GfxS]byte //vF is set upon pixel collision in draw instruction
+	pc   uint16     //program counter
+	oc   uint16     //current opcode (each opcode is two bytes long)
+	vr   [16]byte   //v registers (v0-vE: general purpose. vF: carry flag)
+	ir   uint16     //index register
+	stk  [16]uint16 //store program counter in stack before jump/gosub
+	sp   uint16     //stack pointer to remember the level of stack used
+	Key  [16]byte   //stores the current state of the hex keypad (0-F)
+	dt   byte       //delay timer counts down to zero at 60hz
+	St   byte       //sound timer counts down to zero at 60hz
+	Rg   bool       //redraw gfx - set by 0x00E0 (cls) and 0xDXYN (sprite)
+	mode mode       //mode - CHIP-8/S-CHIP(LO-RES)/S-CHIP(HI-RES)
 }
 
 type opcodeExecutor func()

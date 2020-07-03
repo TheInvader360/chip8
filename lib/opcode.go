@@ -230,7 +230,10 @@ func (vm *Chip8) execCXNN() {
 
 func (vm *Chip8) execDXYN() {
 	//TODO - SCHIP SUPPORT
+	vm.execDXYNC8()
+}
 
+func (vm *Chip8) execDXYNC8() {
 	//draw(vx,vy,n)
 	/*
 		Read n bytes (data) from memory, starting at i.
@@ -250,8 +253,8 @@ func (vm *Chip8) execDXYN() {
 		//iterate over all cols in the current sprite row
 		for col := uint16(0); col < 8; col++ {
 			//calculate the gfx index for the current pixel (wrap if necessary)
-			x := (vx + col) % 64
-			y := (vy + row) % 32
+			x := ((vx + col) % 64) * 2 //scale logical pix to gfx pix (64:128)
+			y := ((vy + row) % 32) * 2 //scale logical pix to gfx pix (32:64)
 			idx := (x + y*GfxW)
 			//apply bitwise AND mask to extract the pixel's state from data
 			if data&(0b10000000>>col) != 0 {
@@ -259,13 +262,21 @@ func (vm *Chip8) execDXYN() {
 				if vm.Gfx[idx] == 1 {
 					vm.vr[0xF] = 1
 				}
-				//bitwise XOR operation to toggle gfx pixel state
-				vm.Gfx[idx] ^= 1
+				//bitwise XOR operation to toggle 2x2 gfx pixels state
+				vm.Gfx[idx] ^= 1        //draw top-left gfx pixel
+				vm.Gfx[idx+1] ^= 1      //draw top-right gfx pixel
+				vm.Gfx[idx+GfxW] ^= 1   //draw bottom-left gfx pixel
+				vm.Gfx[idx+GfxW+1] ^= 1 //draw bottom-right gfx pixel
 			}
 		}
 	}
 	vm.pc += 2
 	vm.Rg = true
+}
+
+func (vm *Chip8) execDXYNSC() {
+	//TODO
+	vm.pc += 2
 }
 
 func (vm *Chip8) execEX9E() {

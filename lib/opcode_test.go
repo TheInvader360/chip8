@@ -414,6 +414,10 @@ func TestExecCXNN(t *testing.T) {
 }
 
 func TestExecDXYN(t *testing.T) {
+	//TODO
+}
+
+func TestExecDXYNC8(t *testing.T) {
 	//draw(x,y,n)
 
 	//draw a 2x2 sprite at 20,10 (sprite: filled square)
@@ -424,12 +428,15 @@ func TestExecDXYN(t *testing.T) {
 	f.ir = 0x0101
 	f.vr[0x7] = 20
 	f.vr[0x9] = 10
-	f.execDXYN()
+	f.execDXYNC8()
 	e := NewChip8()
-	e.Gfx[20+10*64] = 1
-	e.Gfx[21+10*64] = 1
-	e.Gfx[20+11*64] = 1
-	e.Gfx[21+11*64] = 1
+	//translate logical 2x2 at 20,10 to gfx 4x4 at 40,20
+	s := (20*2 + 10*2*128)
+	for y := 0; y < 4; y++ {
+		for x := 0; x < 4; x++ {
+			e.Gfx[s+x+y*128] = 1
+		}
+	}
 	e.vr[0xF] = 0
 	e.pc = 0x0202
 	e.Rg = true
@@ -449,15 +456,27 @@ func TestExecDXYN(t *testing.T) {
 	//draw the sprite again at 63,31 (overlaps all edges)
 	f.vr[0x7] = 63
 	f.vr[0x9] = 31
-	f.execDXYN()
-	e.Gfx[0+0*64] = 1
-	e.Gfx[0+31*64] = 1
-	e.Gfx[63+0*64] = 1
-	e.Gfx[63+31*64] = 1
-	e.Gfx[1+1*64] = 0
-	e.Gfx[1+30*64] = 0
-	e.Gfx[62+1*64] = 0
-	e.Gfx[62+30*64] = 0
+	f.execDXYNC8()
+	//top-left corner - logical 1x1 / gfx 2x2
+	e.Gfx[0+0*128] = 1
+	e.Gfx[1+0*128] = 1
+	e.Gfx[0+1*128] = 1
+	e.Gfx[1+1*128] = 1
+	//top-right corner - logical 1x1 / gfx 2x2
+	e.Gfx[126+0*128] = 1
+	e.Gfx[127+0*128] = 1
+	e.Gfx[126+1*128] = 1
+	e.Gfx[127+1*128] = 1
+	//bottom-left corner - logical 1x1 / gfx 2x2
+	e.Gfx[0+62*128] = 1
+	e.Gfx[1+62*128] = 1
+	e.Gfx[0+63*128] = 1
+	e.Gfx[1+63*128] = 1
+	//bottom-right corner - logical 1x1 / gfx 2x2
+	e.Gfx[126+62*128] = 1
+	e.Gfx[127+62*128] = 1
+	e.Gfx[126+63*128] = 1
+	e.Gfx[127+63*128] = 1
 	if f.Gfx != e.Gfx {
 		t.Errorf("Expected %v, found %v.", e.Gfx, f.Gfx)
 	}
@@ -466,10 +485,13 @@ func TestExecDXYN(t *testing.T) {
 	f.vr[0x7] = 22
 	f.vr[0x9] = 12
 	f.execDXYN()
-	e.Gfx[22+12*64] = 1
-	e.Gfx[23+12*64] = 1
-	e.Gfx[22+13*64] = 1
-	e.Gfx[23+13*64] = 1
+	//translate logical 2x2 at 22,12 to gfx 4x4 at 44,24
+	s = (22*2 + 12*2*128)
+	for y := 0; y < 4; y++ {
+		for x := 0; x < 4; x++ {
+			e.Gfx[s+x+y*128] = 1
+		}
+	}
 	e.vr[0xF] = 0
 	if f.Gfx != e.Gfx {
 		t.Errorf("Expected %v, found %v.", e.Gfx, f.Gfx)
@@ -481,11 +503,21 @@ func TestExecDXYN(t *testing.T) {
 	//draw the sprite again at 23,13 (pixel erased)
 	f.vr[0x7] = 23
 	f.vr[0x9] = 13
-	f.execDXYN()
-	e.Gfx[23+13*64] = 0
-	e.Gfx[24+13*64] = 1
-	e.Gfx[23+14*64] = 1
-	e.Gfx[24+14*64] = 1
+	f.execDXYNC8()
+	//translate logical 2x2 at 23,13 to gfx 4x4 at 46,26 (on)
+	s = (23*2 + 13*2*128)
+	for y := 0; y < 4; y++ {
+		for x := 0; x < 4; x++ {
+			e.Gfx[s+x+y*128] = 1
+		}
+	}
+	//translate logical 1x1 at 23,13 to gfx 2x2 at 46,26 (off)
+	s = (23*2 + 13*2*128)
+	for y := 0; y < 2; y++ {
+		for x := 0; x < 2; x++ {
+			e.Gfx[s+x+y*128] = 0
+		}
+	}
 	e.vr[0xF] = 1
 	if f.Gfx != e.Gfx {
 		t.Errorf("Expected %v, found %v.", e.Gfx, f.Gfx)
@@ -493,6 +525,10 @@ func TestExecDXYN(t *testing.T) {
 	if f.vr[0xF] != e.vr[0xF] {
 		t.Errorf("Expected %v, found %v.", e.vr[0xF], f.vr[0xF])
 	}
+}
+
+func TestExecDXYNSC(t *testing.T) {
+	//TODO
 }
 
 func TestExecEX9E(t *testing.T) {
