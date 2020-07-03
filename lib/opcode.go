@@ -4,6 +4,10 @@ import (
 	"math/rand"
 )
 
+func (vm *Chip8) exec0NNN() {
+	//do nothing
+}
+
 func (vm *Chip8) exec00CN() {
 	//TODO
 	vm.pc += 2
@@ -47,10 +51,6 @@ func (vm *Chip8) exec00FE() {
 func (vm *Chip8) exec00FF() {
 	//TODO
 	vm.pc += 2
-}
-
-func (vm *Chip8) exec0NNN() {
-	//do nothing
 }
 
 func (vm *Chip8) exec1NNN() {

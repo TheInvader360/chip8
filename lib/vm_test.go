@@ -42,8 +42,14 @@ func TestDecodeOpcode(t *testing.T) {
 	vm := NewChip8()
 	m := map[uint16]uint16{
 		uint16(0x0123): uint16(0x0000),
+		uint16(0x00C5): uint16(0x00C0),
 		uint16(0x00E0): uint16(0x00E0),
 		uint16(0x00EE): uint16(0x00EE),
+		uint16(0x00FB): uint16(0x00FB),
+		uint16(0x00FC): uint16(0x00FC),
+		uint16(0x00FD): uint16(0x00FD),
+		uint16(0x00FE): uint16(0x00FE),
+		uint16(0x00FF): uint16(0x00FF),
 		uint16(0x1AB3): uint16(0x1000),
 		uint16(0x205F): uint16(0x2000),
 		uint16(0x3303): uint16(0x3000),
@@ -73,9 +79,12 @@ func TestDecodeOpcode(t *testing.T) {
 		uint16(0xF318): uint16(0xF018),
 		uint16(0xF81E): uint16(0xF01E),
 		uint16(0xFD29): uint16(0xF029),
+		uint16(0xFE30): uint16(0xF030),
 		uint16(0xF233): uint16(0xF033),
 		uint16(0xF155): uint16(0xF055),
 		uint16(0xFF65): uint16(0xF065),
+		uint16(0xF375): uint16(0xF075),
+		uint16(0xF685): uint16(0xF085),
 	}
 	for in, out := range m {
 		vm.oc = in
