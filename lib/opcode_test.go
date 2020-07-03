@@ -5,8 +5,18 @@ import (
 	"testing"
 )
 
+func TestExec0NNN(t *testing.T) {
+	//do nothing
+	f := NewChip8()
+	f.oc = 0x0123
+	f.exec0NNN()
+	e := NewChip8()
+	e.oc = 0x0123
+	checkEqual(t, e, f)
+}
+
 func TestExec00CN(t *testing.T) {
-	//TODO
+	//TODO - scroll down n lines
 }
 
 func TestExec00E0(t *testing.T) {
@@ -40,32 +50,38 @@ func TestExec00EE(t *testing.T) {
 }
 
 func TestExec00FB(t *testing.T) {
-	//TODO
+	//TODO - scroll right 4 pixels
 }
 
 func TestExec00FC(t *testing.T) {
-	//TODO
+	//TODO - scroll left 4 pixels
 }
 
 func TestExec00FD(t *testing.T) {
-	//TODO
+	//TODO - exit (reset/quit?)
 }
 
 func TestExec00FE(t *testing.T) {
-	//TODO
+	//lo-res mode
+	f := NewChip8()
+	f.oc = 0x00FE
+	f.exec00FE()
+	e := NewChip8()
+	e.oc = 0x00FE
+	e.mode = sclr
+	e.pc = 0x0202
+	checkEqual(t, e, f)
 }
 
 func TestExec00FF(t *testing.T) {
-	//TODO
-}
-
-func TestExec0NNN(t *testing.T) {
-	//do nothing
+	//hi-res mode
 	f := NewChip8()
-	f.oc = 0x0123
-	f.exec0NNN()
+	f.oc = 0x00FF
+	f.exec00FF()
 	e := NewChip8()
-	e.oc = 0x0123
+	e.oc = 0x00FF
+	e.mode = schr
+	e.pc = 0x0202
 	checkEqual(t, e, f)
 }
 
@@ -414,11 +430,11 @@ func TestExecCXNN(t *testing.T) {
 }
 
 func TestExecDXYN(t *testing.T) {
-	//TODO
+	//TODO - call execDXYNHR/execDXYNLR dependent on mode (hi-res/lo-res)
 }
 
-func TestExecDXYNC8(t *testing.T) {
-	//draw(x,y,n)
+func TestExecDXYNLR(t *testing.T) {
+	//draw(x,y,n) - draw n byte sprite from mem[i] at vx,xy (vf=collision)
 
 	//draw a 2x2 sprite at 20,10 (sprite: filled square)
 	f := NewChip8()
@@ -428,7 +444,7 @@ func TestExecDXYNC8(t *testing.T) {
 	f.ir = 0x0101
 	f.vr[0x7] = 20
 	f.vr[0x9] = 10
-	f.execDXYNC8()
+	f.execDXYNLR()
 	e := NewChip8()
 	//translate logical 2x2 at 20,10 to gfx 4x4 at 40,20
 	s := (20*2 + 10*2*128)
@@ -456,7 +472,7 @@ func TestExecDXYNC8(t *testing.T) {
 	//draw the sprite again at 63,31 (overlaps all edges)
 	f.vr[0x7] = 63
 	f.vr[0x9] = 31
-	f.execDXYNC8()
+	f.execDXYNLR()
 	//top-left corner - logical 1x1 / gfx 2x2
 	e.Gfx[0+0*128] = 1
 	e.Gfx[1+0*128] = 1
@@ -484,7 +500,7 @@ func TestExecDXYNC8(t *testing.T) {
 	//draw the sprite again at 22,12 (no pixels erased)
 	f.vr[0x7] = 22
 	f.vr[0x9] = 12
-	f.execDXYN()
+	f.execDXYNLR()
 	//translate logical 2x2 at 22,12 to gfx 4x4 at 44,24
 	s = (22*2 + 12*2*128)
 	for y := 0; y < 4; y++ {
@@ -503,7 +519,7 @@ func TestExecDXYNC8(t *testing.T) {
 	//draw the sprite again at 23,13 (pixel erased)
 	f.vr[0x7] = 23
 	f.vr[0x9] = 13
-	f.execDXYNC8()
+	f.execDXYNLR()
 	//translate logical 2x2 at 23,13 to gfx 4x4 at 46,26 (on)
 	s = (23*2 + 13*2*128)
 	for y := 0; y < 4; y++ {
@@ -527,8 +543,8 @@ func TestExecDXYNC8(t *testing.T) {
 	}
 }
 
-func TestExecDXYNSC(t *testing.T) {
-	//TODO
+func TestExecDXYNHR(t *testing.T) {
+	//TODO - draw(x,y) - draw 16x16 sprite from mem[i] at vx,xy (vf=collision)
 }
 
 func TestExecEX9E(t *testing.T) {
@@ -650,7 +666,7 @@ func TestExecFX1E(t *testing.T) {
 }
 
 func TestExecFX29(t *testing.T) {
-	//i=sprite_addr[vx] (point i at the font sprite for the value in vx)
+	//i=sprite_addr[vx] (point i at 5 byte font sprite for hex char at vx)
 	f := NewChip8()
 	f.oc = 0xF329
 	f.vr[0x3] = 0xF
@@ -664,7 +680,17 @@ func TestExecFX29(t *testing.T) {
 }
 
 func TestExecFX30(t *testing.T) {
-	//TODO
+	//i=sprite_addr[vx] (point i at 10 byte font sprite for hex char at vx)
+	f := NewChip8()
+	f.oc = 0xF230
+	f.vr[0x2] = 0xA
+	f.execFX30()
+	e := NewChip8()
+	e.oc = 0xF230
+	e.vr[0x2] = 0xA
+	e.ir = 0x00B4 //"A" sprite should be stored in Mem[0xB4]:Mem[0xBD]
+	e.pc = 0x0202
+	checkEqual(t, e, f)
 }
 
 func TestExecFX33(t *testing.T) {
@@ -731,11 +757,11 @@ func TestExecFX65(t *testing.T) {
 }
 
 func TestExecFX75(t *testing.T) {
-	//TODO
+	//TODO - store v0:vx in rpl user flags (x <= 7)... investigate!
 }
 
 func TestExecFX85(t *testing.T) {
-	//TODO
+	//TODO - read v0:vx from rpl user flags (x <= 7)... investigate!
 }
 
 func checkEqual(t *testing.T, e *Chip8, f *Chip8) {

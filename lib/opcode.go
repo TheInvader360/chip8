@@ -9,7 +9,7 @@ func (vm *Chip8) exec0NNN() {
 }
 
 func (vm *Chip8) exec00CN() {
-	//TODO
+	//TODO - scroll down n lines
 	vm.pc += 2
 }
 
@@ -29,27 +29,29 @@ func (vm *Chip8) exec00EE() {
 }
 
 func (vm *Chip8) exec00FB() {
-	//TODO
+	//TODO - scroll right 4 pixels
 	vm.pc += 2
 }
 
 func (vm *Chip8) exec00FC() {
-	//TODO
+	//TODO - scroll left 4 pixels
 	vm.pc += 2
 }
 
 func (vm *Chip8) exec00FD() {
-	//TODO
+	//TODO - exit (reset/quit?)
 	vm.pc += 2
 }
 
 func (vm *Chip8) exec00FE() {
-	//TODO
+	//lo-res mode
+	vm.mode = sclr
 	vm.pc += 2
 }
 
 func (vm *Chip8) exec00FF() {
-	//TODO
+	//hi-res mode
+	vm.mode = schr
 	vm.pc += 2
 }
 
@@ -229,12 +231,12 @@ func (vm *Chip8) execCXNN() {
 }
 
 func (vm *Chip8) execDXYN() {
-	//TODO - SCHIP SUPPORT
-	vm.execDXYNC8()
+	//TODO - call execDXYNHR/execDXYNLR dependent on mode (hi-res/lo-res)
+	vm.execDXYNLR()
 }
 
-func (vm *Chip8) execDXYNC8() {
-	//draw(vx,vy,n)
+func (vm *Chip8) execDXYNLR() {
+	//draw(x,y,n) - draw n byte sprite from mem[i] at vx,xy (vf=collision)
 	/*
 		Read n bytes (data) from memory, starting at i.
 		Display bytes (data) as sprites on screen at coordinates vx,vy.
@@ -274,8 +276,8 @@ func (vm *Chip8) execDXYNC8() {
 	vm.Rg = true
 }
 
-func (vm *Chip8) execDXYNSC() {
-	//TODO
+func (vm *Chip8) execDXYNHR() {
+	//TODO - draw(x,y) - draw 16x16 sprite from mem[i] at vx,xy (vf=collision)
 	vm.pc += 2
 }
 
@@ -338,14 +340,16 @@ func (vm *Chip8) execFX1E() {
 }
 
 func (vm *Chip8) execFX29() {
-	//i=sprite_addr[vx] (point i at the font sprite for the value in vx)
+	//i=sprite_addr[vx] (point i at 5 byte font sprite for hex char at vx)
 	x := vm.oc & 0x0F00 >> 8
 	vm.ir = uint16(vm.vr[x] * 5)
 	vm.pc += 2
 }
 
 func (vm *Chip8) execFX30() {
-	//TODO
+	//i=sprite_addr[vx] (point i at 10 byte font sprite for hex char at vx)
+	x := vm.oc & 0x0F00 >> 8
+	vm.ir = uint16(80 + vm.vr[x]*10)
 	vm.pc += 2
 }
 
@@ -378,11 +382,11 @@ func (vm *Chip8) execFX65() {
 }
 
 func (vm *Chip8) execFX75() {
-	//TODO
+	//TODO - store v0:vx in rpl user flags (x <= 7)... investigate!
 	vm.pc += 2
 }
 
 func (vm *Chip8) execFX85() {
-	//TODO
+	//TODO - read v0:vx from rpl user flags (x <= 7)... investigate!
 	vm.pc += 2
 }
