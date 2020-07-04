@@ -429,10 +429,6 @@ func TestExecCXNN(t *testing.T) {
 	//TODO: reliable tests where nn is not zero...
 }
 
-func TestExecDXYN(t *testing.T) {
-	//TODO - call execDXYNHR/execDXYNLR dependent on mode (hi-res/lo-res)
-}
-
 func TestExecDXYNLR(t *testing.T) {
 	//draw(x,y,n) - draw n byte sprite from mem[i] at vx,xy (vf=collision)
 
@@ -444,7 +440,7 @@ func TestExecDXYNLR(t *testing.T) {
 	f.ir = 0x0101
 	f.vr[0x7] = 20
 	f.vr[0x9] = 10
-	f.execDXYNLR()
+	f.execDXYNLR(20, 10, 2)
 	e := NewChip8()
 	//translate logical 2x2 at 20,10 to gfx 4x4 at 40,20
 	s := (20*2 + 10*2*128)
@@ -472,7 +468,7 @@ func TestExecDXYNLR(t *testing.T) {
 	//draw the sprite again at 63,31 (overlaps all edges)
 	f.vr[0x7] = 63
 	f.vr[0x9] = 31
-	f.execDXYNLR()
+	f.execDXYNLR(63, 31, 2)
 	//top-left corner - logical 1x1 / gfx 2x2
 	e.Gfx[0+0*128] = 1
 	e.Gfx[1+0*128] = 1
@@ -500,7 +496,7 @@ func TestExecDXYNLR(t *testing.T) {
 	//draw the sprite again at 22,12 (no pixels erased)
 	f.vr[0x7] = 22
 	f.vr[0x9] = 12
-	f.execDXYNLR()
+	f.execDXYNLR(22, 12, 2)
 	//translate logical 2x2 at 22,12 to gfx 4x4 at 44,24
 	s = (22*2 + 12*2*128)
 	for y := 0; y < 4; y++ {
@@ -519,7 +515,7 @@ func TestExecDXYNLR(t *testing.T) {
 	//draw the sprite again at 23,13 (pixel erased)
 	f.vr[0x7] = 23
 	f.vr[0x9] = 13
-	f.execDXYNLR()
+	f.execDXYNLR(23, 13, 2)
 	//translate logical 2x2 at 23,13 to gfx 4x4 at 46,26 (on)
 	s = (23*2 + 13*2*128)
 	for y := 0; y < 4; y++ {
