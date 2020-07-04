@@ -231,11 +231,18 @@ func (vm *Chip8) execCXNN() {
 }
 
 func (vm *Chip8) execDXYN() {
-	//TODO - call execDXYNHR/execDXYNLR dependent on mode (hi-res/lo-res)
-	vm.execDXYNLR()
+	//draw(vx,vy,n) - branch on mode (hi-res/lo-res)
+	vx := uint16(vm.vr[vm.oc&0x0F00>>8])
+	vy := uint16(vm.vr[vm.oc&0x00F0>>4])
+	n := vm.oc & 0x000F
+	if vm.mode == schr {
+		vm.execDXYNHR(vx, vy, n)
+	} else {
+		vm.execDXYNLR(vx, vy, n)
+	}
 }
 
-func (vm *Chip8) execDXYNLR() {
+func (vm *Chip8) execDXYNLR(vx uint16, vy uint16, n uint16) {
 	//draw(vx,vy,n) - draw n byte sprite from mem[i] at vx,xy (vf=collision)
 	/*
 		Read n bytes (data) from memory, starting at i.
@@ -244,9 +251,6 @@ func (vm *Chip8) execDXYNLR() {
 		If any pixels are erased, v[F] is set to 1, otherwise it is set to 0.
 		Sprites wrap to opposite side of screen if they overlap an edge.
 	*/
-	vx := uint16(vm.vr[vm.oc&0x0F00>>8])
-	vy := uint16(vm.vr[vm.oc&0x00F0>>4])
-	n := vm.oc & 0x000F
 	vm.vr[0xF] = 0
 	//iterate over all of the sprite's rows
 	for row := uint16(0); row < n; row++ {
@@ -257,7 +261,7 @@ func (vm *Chip8) execDXYNLR() {
 			//calculate the gfx index for the current pixel (wrap if necessary)
 			x := ((vx + col) % 64) * 2 //scale logical pix to gfx pix (64:128)
 			y := ((vy + row) % 32) * 2 //scale logical pix to gfx pix (32:64)
-			idx := (x + y*GfxW)
+			idx := x + y*GfxW
 			//apply bitwise AND mask to extract the pixel's state from data
 			if data&(0b10000000>>col) != 0 {
 				//set v[F]=1 if pixel is to be erased
@@ -276,9 +280,70 @@ func (vm *Chip8) execDXYNLR() {
 	vm.Rg = true
 }
 
-func (vm *Chip8) execDXYNHR() {
-	//TODO - draw(vx,vy) - draw 16x16 sprite from mem[i] at vx,xy (vf=collision)
+func (vm *Chip8) execDXYNHR(vx uint16, vy uint16, n uint16) {
+	if n == 0 {
+		//draw 16x16 sprite from mem[i] at vx,xy (vf=collision)
+		vm.vr[0xF] = 0
+		//iterate over all of the composite sprite's rows
+		for row := uint16(0); row < 16; row++ {
+			//get the bytes for the current composite sprite row
+			dataL := vm.Mem[vm.ir+(row*2)]   //byte for the left half
+			dataR := vm.Mem[vm.ir+(row*2)+1] //byte for the right half
+			//iterate over all cols in the current sprite row
+			for col := uint16(0); col < 8; col++ {
+				//calc gfx indexes for the current pixels (wrap if necessary)
+				xL := (vx + col) % 128
+				xR := (vx + col + 8) % 128
+				y := (vy + row) % 64
+				idxL := xL + y*GfxW
+				idxR := xR + y*GfxW
+				//apply bitwise AND mask to extract the pixel's state from data
+				if dataL&(0b10000000>>col) != 0 {
+					//set v[F]=1 if pixel is to be erased
+					if vm.Gfx[idxL] == 1 {
+						vm.vr[0xF] = 1
+					}
+					//bitwise XOR operation to toggle pixel state
+					vm.Gfx[idxL] ^= 1
+				}
+				//apply bitwise AND mask to extract the pixel's state from data
+				if dataR&(0b10000000>>col) != 0 {
+					//set v[F]=1 if pixel is to be erased
+					if vm.Gfx[idxR] == 1 {
+						vm.vr[0xF] = 1
+					}
+					//bitwise XOR operation to toggle pixel state
+					vm.Gfx[idxR] ^= 1
+				}
+			}
+		}
+	} else {
+		//draw n byte sprite from mem[i] at vx,xy (vf=collision)
+		vm.vr[0xF] = 0
+		//iterate over all of the sprite's rows
+		for row := uint16(0); row < n; row++ {
+			//get the byte for the current sprite row
+			data := vm.Mem[vm.ir+row]
+			//iterate over all cols in the current sprite row
+			for col := uint16(0); col < 8; col++ {
+				//calc gfx index for the current pixel (wrap if necessary)
+				x := (vx + col) % 128
+				y := (vy + row) % 64
+				idx := x + y*GfxW
+				//apply bitwise AND mask to extract the pixel's state from data
+				if data&(0b10000000>>col) != 0 {
+					//set v[F]=1 if pixel is to be erased
+					if vm.Gfx[idx] == 1 {
+						vm.vr[0xF] = 1
+					}
+					//bitwise XOR operation to toggle pixel state
+					vm.Gfx[idx] ^= 1
+				}
+			}
+		}
+	}
 	vm.pc += 2
+	vm.Rg = true
 }
 
 func (vm *Chip8) execEX9E() {

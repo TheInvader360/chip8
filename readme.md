@@ -18,7 +18,7 @@ Clone and run:
 Command line options:
 
     -path string : path to rom file (default "./rom/test/ti360.ch8")
-    -clock int   : cpu clock speed in hz (100-1000) (default 400)
+    -clock int   : cpu clock speed in hz (100-2000) (default 400)
     -debug       : enable debug info in terminal
     -fullscreen  : enable fullscreen mode
     -height int  : height of client screen in pixels (default 320)
@@ -33,6 +33,9 @@ Example launch commands:
     go run main.go -path=./rom/chip8/PONG.ch8 -clock=500 -fullscreen
     go run main.go -path=./rom/chip8/UFO.ch8 -width=1280 -height=640
     go run main.go -path=./rom/chip8/WALL.ch8 -clock=300 -debug -width=640 -height=480
+    go run main.go -path=./rom/schip/DRAGON1.ch8 -debug -clock=2000
+    go run main.go -path=./rom/schip/JOUST23.ch8 -debug -clock=2000
+
 
 ## Input
 

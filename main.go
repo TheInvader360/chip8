@@ -10,7 +10,7 @@ import (
 
 func main() {
 	path := flag.String("path", "./rom/test/ti360.ch8", "path to rom file")
-	clock := flag.Int("clock", 400, "cpu clock speed in hz (100-1000)")
+	clock := flag.Int("clock", 400, "cpu clock speed in hz (100-2000)")
 	screenW := flag.Int("width", 640, "width of client screen in pixels")
 	screenH := flag.Int("height", 320, "height of client screen in pixels")
 	fullscreen := flag.Bool("fullscreen", false, "enable fullscreen mode")
@@ -19,7 +19,7 @@ func main() {
 
 	opts := client.Opts{
 		Path:  *path,
-		Clock: lib.Clamp(*clock, 100, 1000),
+		Clock: lib.Clamp(*clock, 100, 2000),
 		ScrW:  *screenW,
 		ScrH:  *screenH,
 		ScrF:  *fullscreen,
